@@ -66,6 +66,16 @@ export function SettingsView() {
           </select>
           <p className="field-hint">Swift keeps up in real time on most laptops. Apex is more accurate and needs a fast processor.</p>
         </div>
+        <div className="field narrow">
+          <label htmlFor="scale">Transcript text size</label>
+          <select id="scale" value={s.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })}>
+            {[0.9, 1, 1.2, 1.4, 1.6].map((v) => (
+              <option key={v} value={v}>
+                {v === 1 ? 'Normal' : v < 1 ? 'Small' : v <= 1.2 ? 'Large' : v <= 1.4 ? 'Larger' : 'Largest'}
+              </option>
+            ))}
+          </select>
+        </div>
         <Toggle checked={s.showPartials} onChange={(v) => set({ showPartials: v })} label="Show words while someone is still talking" hint="Turn off to save processor time on slower computers." />
         <div className="field narrow">
           <label htmlFor="threads">Processor threads</label>

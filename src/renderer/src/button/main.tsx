@@ -6,6 +6,8 @@ import { api, clock, isLive, useElapsed, useLevel, useLiveStatus } from '../comm
 import { MicIcon } from '../icons'
 
 const DRAG_THRESHOLD = 4
+// a click waits this long so a double-click (open live window) never also toggles recording
+const CLICK_DELAY_MS = 260
 const R = 33 // level ring radius in the 76px window
 
 function FloatingButton() {
@@ -14,6 +16,7 @@ function FloatingButton() {
   const live = isLive(status)
   const elapsed = useElapsed(live ? status.startedAt : null)
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null)
+  const clickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const onPointerDown = (e: React.PointerEvent) => {
     if (e.button !== 0) return
@@ -32,17 +35,43 @@ function FloatingButton() {
     const d = drag.current
     drag.current = null
     if (!d) return
-    if (d.moved) api.win.dragButton('end', e.screenX, e.screenY)
-    else void api.session.toggle()
+    if (d.moved) {
+      api.win.dragButton('end', e.screenX, e.screenY)
+      return
+    }
+    if (clickTimer.current) return // second click of a double-click
+    clickTimer.current = setTimeout(() => {
+      clickTimer.current = null
+      void api.session.toggle()
+    }, CLICK_DELAY_MS)
+  }
+  const onDoubleClick = () => {
+    if (clickTimer.current) clearTimeout(clickTimer.current)
+    clickTimer.current = null
+    api.win.showOverlay()
   }
 
   const state = status.status === 'retrying' ? 'retrying' : status.status === 'stopping' ? 'saving' : live ? 'live' : 'idle'
+  // small corner dot for anything the user should know without hovering
+  const health =
+    status.engine === 'restarting' || status.engine === 'failed' || status.status === 'retrying' ? 'warn'
+    : status.engine === 'loading' ? 'loading'
+    : !live && status.pendingJobs > 0 ? 'finishing'
+    : null
+  const healthText =
+    health === 'warn' ? status.message ?? 'Speech engine is restarting'
+    : health === 'loading' ? 'Loading the speech model'
+    : health === 'finishing' ? `Finishing ${status.pendingJobs} line${status.pendingJobs === 1 ? '' : 's'}`
+    : null
   // the ring follows whoever is louder: you or the call
   const voice = live ? Math.max(level.mic, level.system) : 0
   const circumference = 2 * Math.PI * R
-  const title = live
-    ? `Recording ${clock(elapsed)} — click to stop (Ctrl+Alt+N). Drag to move, right-click for options.`
-    : 'Start transcript (Ctrl+Alt+N). Drag to move, right-click for options.'
+  const title =
+    (healthText ? `${healthText}\n` : '') +
+    (live
+      ? `Recording ${clock(elapsed)}. Click to stop (Ctrl+Alt+N). Double-click for the live window.`
+      : 'Click to start a transcript (Ctrl+Alt+N). Double-click for the live window.') +
+    '\nDrag to move, right-click for options.'
 
   return (
     <div className={`wrap ${state}`}>
@@ -69,7 +98,7 @@ function FloatingButton() {
           e.preventDefault()
           api.win.buttonMenu()
         }}
-        onDoubleClick={() => api.win.showOverlay()}
+        onDoubleClick={onDoubleClick}
       >
         {live ? (
           <>
@@ -80,6 +109,7 @@ function FloatingButton() {
           <MicIcon size={24} />
         )}
       </button>
+      {health && <span className={`health ${health}`} aria-label={healthText ?? undefined} />}
     </div>
   )
 }

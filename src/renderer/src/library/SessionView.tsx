@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
-import { api, speakerClass } from '../common'
-import { CopyIcon, DownloadIcon, FolderIcon, ResumeIcon, SparkIcon, TrashIcon } from '../icons'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { api, clock, speakerClass } from '../common'
+import { CopyIcon, DownloadIcon, FolderIcon, PauseIcon, PlayIcon, ResumeIcon, SparkIcon, TrashIcon } from '../icons'
 import type { ExportFormat, SessionDetail } from '../../../shared/api'
 import { formatClock, toParagraphs } from '../../../shared/transcript-format'
 
@@ -19,6 +19,12 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
   const [menu, setMenu] = useState(false)
   const [audioIndex, setAudioIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement>(null)
+  const [playing, setPlaying] = useState(false)
+  const [pos, setPos] = useState(0)
+  const [dur, setDur] = useState(0)
+  const [rate, setRate] = useState(1)
+  const pendingSeek = useRef<number | null>(null)
+  const activeRef = useRef<HTMLElement | null>(null)
   const isLive = liveSessionId === id
 
   const load = () =>
@@ -55,27 +61,65 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
     setTimeout(() => setToast(null), 2400)
   }
 
+  const paragraphs = useMemo(() => toParagraphs(detail?.segments ?? []), [detail?.segments])
+  const audio = detail?.audio ?? []
+  // session time (ms) of the playhead, used to highlight the line being played
+  const playheadMs = audio.length && (playing || pos > 0) ? audio[audioIndex].offsetMs + pos * 1000 : -1
+  let activePara = -1
+  for (let i = 0; i < paragraphs.length; i++) if (paragraphs[i].startMs <= playheadMs + 250) activePara = i
+
+  useEffect(() => {
+    if (playing) activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activePara, playing])
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = rate
+  }, [rate, audioIndex])
+
   if (!detail) return <div className="placeholder">Opening call…</div>
-  const { session, segments, audio } = detail
+  const { session, segments } = detail
   const duration = session.endedAt ? formatClock(session.endedAt - session.startedAt) : null
 
-  const seekTo = (startMs: number) => {
-    let idx = 0
-    for (let i = 0; i < audio.length; i++) if (audio[i].offsetMs <= startMs) idx = i
+  const onLoadedMetadata = () => {
     const el = audioRef.current
-    if (!el || audio.length === 0) return
-    const target = Math.max(0, (startMs - audio[idx].offsetMs) / 1000 - 0.3)
-    if (idx !== audioIndex) {
-      setAudioIndex(idx)
-      el.onloadedmetadata = () => {
-        el.currentTime = target
-        void el.play()
-        el.onloadedmetadata = null
-      }
+    if (!el) return
+    if (Number.isFinite(el.duration)) {
+      setDur(el.duration)
     } else {
-      el.currentTime = target
+      // recorder-made WebM has no duration header: seek far ahead once to learn it
+      el.addEventListener(
+        'durationchange',
+        () => {
+          setDur(Number.isFinite(el.duration) ? el.duration : 0)
+          el.currentTime = pendingSeek.current ?? 0
+        },
+        { once: true },
+      )
+      el.currentTime = 1e9
+    }
+    el.playbackRate = rate
+    if (pendingSeek.current !== null && Number.isFinite(el.duration)) {
+      el.currentTime = pendingSeek.current
+    }
+    if (pendingSeek.current !== null) {
+      pendingSeek.current = null
       void el.play()
     }
+  }
+
+  const seekTo = (startMs: number) => {
+    if (audio.length === 0) return
+    let idx = 0
+    for (let i = 0; i < audio.length; i++) if (audio[i].offsetMs <= startMs) idx = i
+    const target = Math.max(0, (startMs - audio[idx].offsetMs) / 1000 - 0.3)
+    const el = audioRef.current
+    if (idx !== audioIndex || !el) {
+      pendingSeek.current = target
+      setAudioIndex(idx)
+      return
+    }
+    el.currentTime = target
+    void el.play()
   }
 
   const exportAs = async (format: ExportFormat) => {
@@ -185,7 +229,52 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
 
         {audio.length > 0 && (
           <div className="player">
-            <audio ref={audioRef} controls src={audio[audioIndex]?.url} preload="metadata" />
+            <audio
+              ref={audioRef}
+              src={audio[audioIndex]?.url}
+              preload="metadata"
+              onLoadedMetadata={onLoadedMetadata}
+              onTimeUpdate={(e) => setPos(e.currentTarget.currentTime)}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => {
+                setPlaying(false)
+                if (audioIndex < audio.length - 1) {
+                  pendingSeek.current = 0
+                  setAudioIndex(audioIndex + 1)
+                }
+              }}
+            />
+            <button
+              className="play"
+              onClick={() => (playing ? audioRef.current?.pause() : void audioRef.current?.play())}
+              aria-label={playing ? 'Pause recording' : 'Play recording'}
+            >
+              {playing ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
+            </button>
+            <span className="player-time">{clock(Math.floor(pos))}</span>
+            <input
+              className="scrub"
+              type="range"
+              min={0}
+              max={dur || 0}
+              step={0.1}
+              value={Math.min(pos, dur || 0)}
+              onChange={(e) => {
+                const el = audioRef.current
+                if (el) el.currentTime = Number(e.target.value)
+              }}
+              aria-label="Playback position"
+              disabled={!dur}
+            />
+            <span className="player-time">{clock(Math.floor(dur))}</span>
+            <select className="speed" value={rate} onChange={(e) => setRate(Number(e.target.value))} aria-label="Playback speed">
+              {[1, 1.25, 1.5, 2].map((r) => (
+                <option key={r} value={r}>
+                  {r}×
+                </option>
+              ))}
+            </select>
             {audio.length > 1 && <span className="hint">Part {audioIndex + 1} of {audio.length}</span>}
           </div>
         )}
@@ -195,9 +284,9 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
         {segments.length === 0 && (
           <p className="none">{isLive ? 'Listening. Lines appear here a moment after each sentence.' : 'No speech was recorded in this call.'}</p>
         )}
-        {toParagraphs(segments).map((p, i) => (
-          <section key={i} className="para">
-            <button className="para-ts" title="Play from here" onClick={() => seekTo(p.startMs)} disabled={audio.length === 0}>
+        {paragraphs.map((p, i) => (
+          <section key={i} className={`para ${i === activePara ? 'active' : ''}`} ref={i === activePara ? (el) => { activeRef.current = el } : undefined}>
+            <button className="para-ts" title="Play from here" aria-label={`Play from ${formatClock(p.startMs)}`} onClick={() => seekTo(p.startMs)} disabled={audio.length === 0}>
               {formatClock(p.startMs)}
             </button>
             <div className="para-body">

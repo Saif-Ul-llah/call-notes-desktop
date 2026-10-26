@@ -21,7 +21,19 @@ export function overlaps(a: Pick<Segment, 'startMs' | 'endMs'>, b: Pick<Segment,
   return a.startMs <= b.endMs + slackMs && b.startMs <= a.endMs + slackMs
 }
 
-/** True when `mic` looks like the microphone picking up `system` audio from the speakers. */
-export function isEcho(mic: Segment, system: Segment, threshold = 0.6): boolean {
-  return mic.stream === 'mic' && system.stream === 'system' && overlaps(mic, system) && similarity(mic.text, system.text) >= threshold
+/** Fraction of the mic segment's time that overlaps the system segment. */
+export function timeOverlap(mic: Pick<Segment, 'startMs' | 'endMs'>, system: Pick<Segment, 'startMs' | 'endMs'>): number {
+  const shared = Math.min(mic.endMs, system.endMs + 700) - Math.max(mic.startMs, system.startMs - 300)
+  return Math.max(0, shared) / Math.max(1, mic.endMs - mic.startMs)
+}
+
+/**
+ * True when `mic` looks like the microphone picking up `system` audio from the speakers.
+ * An echo happens at the same moment and repeats most of the words. Short replies are
+ * never treated as echo: people genuinely answer "theek hai" right after hearing it.
+ */
+export function isEcho(mic: Segment, system: Segment, threshold = 0.7): boolean {
+  if (mic.stream !== 'mic' || system.stream !== 'system') return false
+  if (tokens(mic.text).size < 4) return false
+  return timeOverlap(mic, system) >= 0.5 && similarity(mic.text, system.text) >= threshold
 }

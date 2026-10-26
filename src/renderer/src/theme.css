@@ -45,6 +45,8 @@
   --t-lg: 18px;
   --t-xl: 22px;
 
+  --scale: 1;
+
   /* shape */
   --r-s: 6px;
   --r-m: 10px;

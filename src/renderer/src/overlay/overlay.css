@@ -81,7 +81,7 @@
 .text {
   margin: 0;
   font-family: var(--font-read);
-  font-size: var(--t-read);
+  font-size: calc(var(--t-read) * var(--scale));
   line-height: 1.55;
   color: var(--text);
   user-select: text;
@@ -167,6 +167,15 @@
 }
 .meter-fill.them {
   background: var(--them);
+}
+.text-size {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.text-size .btn {
+  font-weight: 700;
+  color: var(--text-dim);
 }
 .opacity {
   display: flex;

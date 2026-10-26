@@ -83,6 +83,12 @@ describe('echo detection', () => {
   it('flags mic segments that repeat system audio', () => {
     expect(isEcho(seg('mic', 'kal meeting kitne baje hai', 1000, 3000), seg('system', 'Kal meeting kitne baje hai?', 900, 2900))).toBe(true)
   })
+  it('keeps short genuine replies that repeat words just heard', () => {
+    expect(isEcho(seg('mic', 'haan theek hai', 2950, 3800), seg('system', 'report kal tak theek hai', 900, 2900))).toBe(false)
+  })
+  it('requires the echo to happen at the same moment', () => {
+    expect(isEcho(seg('mic', 'kal meeting kitne baje hai', 3500, 5500), seg('system', 'kal meeting kitne baje hai', 900, 2900))).toBe(false)
+  })
   it('keeps genuine replies', () => {
     expect(isEcho(seg('mic', 'shaam paanch baje', 3200, 4500), seg('system', 'kal meeting kitne baje hai', 900, 2900))).toBe(false)
   })

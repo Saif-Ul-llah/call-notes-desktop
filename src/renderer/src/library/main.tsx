@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { useCallback, useEffect, useState } from 'react'
 import '../theme.css'
 import './library.css'
-import { api, clock, isLive, StatusPill, useElapsed, useLiveStatus } from '../common'
+import { api, clock, isLive, StatusPill, useElapsed, useLiveStatus, useTextScale } from '../common'
 import { GearIcon, Glyph, MicIcon, SearchIcon, StopIcon } from '../icons'
 import type { SessionInfo } from '../../../shared/types'
 import { formatClock } from '../../../shared/transcript-format'
@@ -23,6 +23,7 @@ function relativeDay(ts: number): string {
 
 function Library() {
   const live = useLiveStatus()
+  useTextScale() // applies the saved transcript text size
   const recording = isLive(live)
   const elapsed = useElapsed(recording ? live.startedAt : null)
   const [sessions, setSessions] = useState<SessionInfo[]>([])

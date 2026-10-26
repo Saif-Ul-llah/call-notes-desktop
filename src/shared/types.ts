@@ -82,4 +82,8 @@ export interface Settings {
   threads: number
   useGpu: boolean
   showPartials: boolean
+  /** transcript text size multiplier (live window and library) */
+  textScale: number
+  /** bumped when stored settings need a one-time migration */
+  settingsVersion: number
 }

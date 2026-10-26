@@ -31,6 +31,27 @@ export function useLevel(): { mic: number; system: number } {
   return level
 }
 
+export const TEXT_SCALE_MIN = 0.8
+export const TEXT_SCALE_MAX = 1.8
+
+/** Transcript text size from settings, applied as the --scale CSS variable. */
+export function useTextScale(): [number, (v: number) => void] {
+  const [scale, setScale] = useState(1)
+  useEffect(() => {
+    void api.settings.get().then((s) => setScale(s.textScale ?? 1))
+    return api.settings.onChange((s) => setScale(s.textScale ?? 1))
+  }, [])
+  useEffect(() => {
+    document.documentElement.style.setProperty('--scale', String(scale))
+  }, [scale])
+  const update = (v: number) => {
+    const next = Math.round(Math.min(TEXT_SCALE_MAX, Math.max(TEXT_SCALE_MIN, v)) * 10) / 10
+    setScale(next)
+    void api.settings.set({ textScale: next })
+  }
+  return [scale, update]
+}
+
 /** Seconds since `startedAt`, ticking every second. */
 export function useElapsed(startedAt: number | null): number {
   const [now, setNow] = useState(Date.now())

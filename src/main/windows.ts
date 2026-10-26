@@ -21,6 +21,22 @@ function pageUrl(win: BrowserWindow, page: 'button' | 'overlay' | 'library' | 'c
 
 const preload = () => join(__dirname, '../preload/index.js')
 
+/**
+ * Float like a picture-in-picture player: above every app (including full-screen ones)
+ * and on every workspace. Window managers apply some of this only once the window is
+ * mapped, so it is re-applied whenever the window is shown.
+ */
+function pinEverywhere(win: BrowserWindow, level: 'screen-saver' | 'floating'): void {
+  const apply = () => {
+    if (win.isDestroyed()) return
+    win.setAlwaysOnTop(true, level)
+    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  }
+  apply()
+  win.on('show', apply)
+  win.once('ready-to-show', apply)
+}
+
 /** Keep a rectangle on some display (monitors can be unplugged between runs). */
 function onScreen(bounds: Rectangle): Rectangle {
   const display = screen.getDisplayMatching(bounds)
@@ -133,8 +149,7 @@ export class WindowManager {
       title: 'Call Notes',
       webPreferences: { preload: preload() },
     })
-    win.setAlwaysOnTop(true, 'screen-saver')
-    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    pinEverywhere(win, 'screen-saver')
     win.webContents.on('render-process-gone', () => {
       if (!this.quitting) setTimeout(() => this.createButton(), 500)
     })
@@ -191,8 +206,7 @@ export class WindowManager {
       title: 'Call Notes — Live transcript',
       webPreferences: { preload: preload() },
     })
-    win.setAlwaysOnTop(true, 'floating')
-    win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+    pinEverywhere(win, 'floating')
     win.setOpacity(s.overlayOpacity)
     const persist = () => {
       if (this.saveTimer) clearTimeout(this.saveTimer)

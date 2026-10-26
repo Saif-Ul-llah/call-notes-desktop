@@ -25,7 +25,22 @@ export function defaultSettings(): Settings {
     threads: Math.max(2, Math.min(4, Math.floor(cpus().length / 2))),
     useGpu: false,
     showPartials: true,
+    textScale: 1,
+    settingsVersion: SETTINGS_VERSION,
   }
+}
+
+const SETTINGS_VERSION = 2
+
+/** One-time fixes for settings saved by older versions. */
+function migrate(stored: Partial<Settings>, defaults: Settings): Partial<Settings> {
+  const out = { ...stored }
+  if ((stored.settingsVersion ?? 1) < 2) {
+    // v0.1 defaulted to (cores - 2) threads, which oversubscribes laptops; adopt the new cap
+    if ((stored.threads ?? 0) > defaults.threads) out.threads = defaults.threads
+  }
+  out.settingsVersion = SETTINGS_VERSION
+  return out
 }
 
 export class SettingsStore extends EventEmitter<{ change: [Settings, Partial<Settings>] }> {
@@ -36,7 +51,13 @@ export class SettingsStore extends EventEmitter<{ change: [Settings, Partial<Set
     super()
     const defaults = defaultSettings()
     try {
-      this.value = existsSync(this.path) ? { ...defaults, ...JSON.parse(readFileSync(this.path, 'utf8')) } : defaults
+      if (existsSync(this.path)) {
+        const stored = JSON.parse(readFileSync(this.path, 'utf8')) as Partial<Settings>
+        this.value = { ...defaults, ...migrate(stored, defaults) }
+        if (stored.settingsVersion !== SETTINGS_VERSION) this.set({})
+      } else {
+        this.value = defaults
+      }
     } catch {
       // corrupt settings file: start over rather than refusing to launch
       this.value = defaults

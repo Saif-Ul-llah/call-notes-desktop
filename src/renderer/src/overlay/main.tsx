@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import '../theme.css'
 import './overlay.css'
-import { api, clock, isLive, speakerClass, StatusPill, useElapsed, useLevel, useLiveStatus } from '../common'
+import { api, clock, isLive, speakerClass, StatusPill, TEXT_SCALE_MAX, TEXT_SCALE_MIN, useElapsed, useLevel, useLiveStatus, useTextScale } from '../common'
 import { CheckIcon, CloseIcon, CopyIcon, Glyph, LibraryIcon, MicIcon, StopIcon } from '../icons'
 import type { PartialLine, Segment, StreamId } from '../../../shared/types'
 import { formatClock } from '../../../shared/transcript-format'
@@ -45,6 +45,7 @@ function Overlay() {
   const [opacity, setOpacity] = useState(0.95)
   const [follow, setFollow] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [scale, setScale] = useTextScale()
   const listRef = useRef<HTMLDivElement>(null)
   const sessionRef = useRef<string | null>(null)
 
@@ -175,6 +176,14 @@ function Overlay() {
         <div className="meters">
           <Meter label="You" value={live ? level.mic : 0} tone="me" />
           <Meter label="Call" value={live ? level.system : 0} tone="them" />
+        </div>
+        <div className="text-size" role="group" aria-label="Text size">
+          <button className="btn small icon quiet" onClick={() => setScale(scale - 0.1)} disabled={scale <= TEXT_SCALE_MIN} title="Smaller text" aria-label="Smaller text">
+            A−
+          </button>
+          <button className="btn small icon quiet" onClick={() => setScale(scale + 0.1)} disabled={scale >= TEXT_SCALE_MAX} title="Larger text" aria-label="Larger text">
+            A+
+          </button>
         </div>
         <label className="opacity" title="Window opacity">
           <span>Opacity</span>

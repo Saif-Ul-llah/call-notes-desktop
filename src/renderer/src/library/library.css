@@ -286,12 +286,37 @@
 .player {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 14px;
+  max-width: 640px;
 }
-.player audio {
-  width: min(560px, 100%);
-  height: 34px;
+.play {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: var(--brass);
+  color: var(--ebony);
+}
+.play:hover {
+  background: var(--brass-hi);
+}
+.player-time {
+  font-size: var(--t-xs);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 34px;
+}
+.scrub {
+  flex: 1;
+  min-width: 80px;
+}
+.speed {
+  padding: 4px 6px;
+  font-size: var(--t-sm);
 }
 
 .transcript {
@@ -304,6 +329,17 @@
   grid-template-columns: 54px minmax(0, 72ch);
   gap: 14px;
   margin-bottom: 18px;
+}
+.para {
+  border-radius: var(--r-s);
+  transition: background 0.2s;
+}
+.para.active {
+  background: var(--lacquer-2);
+  box-shadow: -10px 0 0 var(--lacquer-2), 10px 0 0 var(--lacquer-2);
+}
+.para.active .para-text {
+  color: var(--ivory);
 }
 .para-ts {
   align-self: start;
@@ -329,7 +365,7 @@
 .para-text {
   margin: 0;
   font-family: var(--font-read);
-  font-size: 16px;
+  font-size: calc(16px * var(--scale));
   line-height: 1.65;
   user-select: text;
 }

@@ -21,6 +21,19 @@ export const StopIcon = ({ size = 14 }: P) => (
   </svg>
 )
 
+export const PlayIcon = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+    <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.4-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" />
+  </svg>
+)
+
+export const PauseIcon = ({ size = 16 }: P) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+    <rect x="6" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+    <rect x="14" y="5" width="4" height="14" rx="1.2" fill="currentColor" />
+  </svg>
+)
+
 export const CopyIcon = (p: P) => (
   <Svg {...p}>
     <rect x="9" y="9" width="11" height="11" rx="2" />
