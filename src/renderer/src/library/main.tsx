@@ -11,15 +11,19 @@ import { SettingsView } from './SettingsView'
 
 type View = { kind: 'session'; id: string } | { kind: 'settings' } | { kind: 'empty' }
 
-function relativeDay(ts: number): string {
+/** Heading for the day a call belongs to: Today, Yesterday, a weekday this week, or a date. */
+function dayGroup(ts: number): string {
   const d = new Date(ts)
-  const today = new Date()
-  const yesterday = new Date(Date.now() - 86400000)
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-  if (d.toDateString() === today.toDateString()) return `Today, ${time}`
-  if (d.toDateString() === yesterday.toDateString()) return `Yesterday, ${time}`
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: d.getFullYear() === today.getFullYear() ? undefined : 'numeric' })
+  const startOfToday = new Date()
+  startOfToday.setHours(0, 0, 0, 0)
+  const days = Math.floor((startOfToday.getTime() - new Date(d).setHours(0, 0, 0, 0)) / 86400000)
+  if (days <= 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return d.toLocaleDateString(undefined, { weekday: 'long' })
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: d.getFullYear() === startOfToday.getFullYear() ? undefined : 'numeric' })
 }
+
+const timeOfDay = (ts: number) => new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
 
 function Library() {
   const live = useLiveStatus()
@@ -86,11 +90,15 @@ function Library() {
 
         <nav className="sessions" aria-label="Calls">
           {sessions.length === 0 && <p className="none">{query ? 'Nothing matches that search.' : 'Your calls will appear here.'}</p>}
-          {sessions.map((s) => {
+          {sessions.map((s, i) => {
             const active = view.kind === 'session' && view.id === s.id
             const isLiveRow = s.id === live.sessionId && recording
+            const group = dayGroup(s.startedAt)
+            const newGroup = i === 0 || dayGroup(sessions[i - 1].startedAt) !== group
             return (
-              <button key={s.id} className={`row ${active ? 'active' : ''}`} onClick={() => setView({ kind: 'session', id: s.id })}>
+              <div key={s.id} className="row-wrap">
+              {newGroup && <h3 className="group">{group}</h3>}
+              <button className={`row ${active ? 'active' : ''}`} onClick={() => setView({ kind: 'session', id: s.id })}>
                 <span className="row-top">
                   <span className="row-title">{s.title}</span>
                   {isLiveRow && <span className="tag live">Live</span>}
@@ -98,10 +106,11 @@ function Library() {
                 </span>
                 <span className="row-snippet">{s.snippet ?? (isLiveRow ? 'Listening…' : 'No speech recorded')}</span>
                 <span className="row-meta">
-                  <span>{relativeDay(s.startedAt)}</span>
+                  <span>{timeOfDay(s.startedAt)}</span>
                   {s.endedAt && <span>{formatClock(s.endedAt - s.startedAt)}</span>}
                 </span>
               </button>
+              </div>
             )
           })}
         </nav>

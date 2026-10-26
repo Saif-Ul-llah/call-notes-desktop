@@ -216,7 +216,7 @@ export class WindowManager {
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,
-      backgroundColor: '#12151b',
+      backgroundColor: '#1a1610',
       title: 'Call Notes — Live transcript',
       webPreferences: { preload: preload() },
     })
@@ -266,11 +266,11 @@ export class WindowManager {
       minHeight: 480,
       show: false,
       title: 'Call Notes',
-      backgroundColor: '#12151b',
+      backgroundColor: '#1a1610',
       autoHideMenuBar: true,
-      // app-drawn navy title bar with the system's own window buttons on top of it
+      // app-drawn title bar with the system's own window buttons on top of it
       titleBarStyle: 'hidden',
-      titleBarOverlay: { color: '#0f1b2e', symbolColor: '#aab1be', height: 40 },
+      titleBarOverlay: { color: '#211b13', symbolColor: '#c4b89e', height: 40 },
       webPreferences: { preload: preload() },
     })
     win.once('ready-to-show', () => win.show())

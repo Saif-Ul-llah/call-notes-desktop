@@ -14,8 +14,8 @@
   height: 40px;
   padding: 0 16px;
   padding-right: calc(100vw - env(titlebar-area-width, calc(100vw - 150px)) + 16px);
-  background: var(--navy);
-  border-bottom: 1px solid var(--navy-line);
+  background: var(--chrome);
+  border-bottom: 1px solid var(--chrome-line);
   font-size: var(--t-md);
   font-weight: 700;
   color: var(--text);
@@ -35,8 +35,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 14px 12px;
-  background: var(--navy);
-  border-right: 1px solid var(--navy-line);
+  background: var(--chrome);
+  border-right: 1px solid var(--chrome-line);
   min-height: 0;
 }
 .record {
@@ -44,7 +44,7 @@
   flex-direction: column;
   gap: 10px;
   padding-bottom: 14px;
-  border-bottom: 1px solid var(--navy-line);
+  border-bottom: 1px solid var(--chrome-line);
 }
 .record-btn {
   height: 40px;
@@ -78,9 +78,9 @@
   align-items: center;
   gap: 8px;
   padding: 0 10px;
-  border: 1px solid var(--navy-line);
+  border: 1px solid var(--chrome-line);
   border-radius: var(--r-s);
-  background: var(--navy-raised);
+  background: var(--chrome-raised);
   color: var(--text-faint);
 }
 .search:focus-within {
@@ -103,6 +103,7 @@
 }
 .row {
   display: flex;
+  margin-bottom: 2px;
   flex-direction: column;
   gap: 3px;
   text-align: left;
@@ -112,14 +113,24 @@
   border-radius: 0 var(--r-s) var(--r-s) 0;
   padding: 10px 10px 10px 12px;
 }
-.row + .row {
-  border-top: 1px solid var(--navy-line);
+.group {
+  margin: 14px 0 4px;
+  padding: 0 12px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.row-wrap:first-child .group {
+  margin-top: 4px;
+}
+.row {
+  width: 100%;
 }
 .row:hover {
-  background: var(--navy-raised);
+  background: var(--chrome-raised);
 }
 .row.active {
-  background: var(--navy-select);
+  background: var(--chrome-select);
   border-left-color: var(--gold);
 }
 .row-top {
@@ -371,6 +382,20 @@
 }
 .para-ts:disabled {
   cursor: default;
+}
+.para-body {
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+}
+/* a colored rule per speaker makes the back-and-forth easy to scan */
+.para.me .para-body {
+  border-left-color: color-mix(in srgb, var(--me) 60%, transparent);
+}
+.para.them .para-body {
+  border-left-color: color-mix(in srgb, var(--them) 55%, transparent);
+}
+.para.notice .para-body {
+  border-left-color: color-mix(in srgb, var(--warn) 50%, transparent);
 }
 .para-who {
   font-size: var(--t-sm);

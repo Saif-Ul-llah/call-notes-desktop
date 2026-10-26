@@ -281,7 +281,9 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
           <p className="none">{isLive ? 'Listening. Lines appear here a moment after each sentence.' : 'No speech was recorded in this call.'}</p>
         )}
         {paragraphs.map((p, i) => (
-          <section key={i} className={`para ${i === activePara ? 'active' : ''}`} ref={i === activePara ? (el) => { activeRef.current = el } : undefined}>
+          <section
+            key={i}
+            className={`para ${p.speaker === 'Me' ? 'me' : p.speaker === 'Notice' ? 'notice' : 'them'} ${i === activePara ? 'active' : ''}`} ref={i === activePara ? (el) => { activeRef.current = el } : undefined}>
             <button className="para-ts" title="Play from here" aria-label={`Play from ${formatClock(p.startMs)}`} onClick={() => seekTo(p.startMs)} disabled={audio.length === 0}>
               {formatClock(p.startMs)}
             </button>

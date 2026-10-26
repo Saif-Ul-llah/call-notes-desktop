@@ -145,7 +145,7 @@ function Overlay() {
           </div>
         )}
         {turns.map((t) => (
-          <section key={t.lines[0].id} className="turn">
+          <section key={t.lines[0].id} className={`turn ${t.speaker === 'Me' ? 'me' : t.speaker === 'Notice' ? 'notice' : 'them'}`}>
             <div className="turn-head">
               <span className={`who ${speakerClass(t.speaker)}`}>{t.speaker}</span>
               <span className="ts">{formatClock(t.startMs)}</span>
@@ -159,7 +159,7 @@ function Overlay() {
           </section>
         ))}
         {previews.map((p) => (
-          <section key={`preview-${p.stream}`} className="turn preview" aria-live="polite">
+          <section key={`preview-${p.stream}`} className={`turn preview ${p.speaker === 'Me' ? 'me' : 'them'}`} aria-live="polite">
             <div className="turn-head">
               <span className={`who ${speakerClass(p.speaker)}`}>{p.speaker}</span>
               <span className="ts">speaking</span>

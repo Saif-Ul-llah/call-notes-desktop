@@ -1,4 +1,4 @@
-/* Call Notes theme: graphite canvas, navy chrome, muted gold accent. Fonts are bundled so the app stays fully offline. */
+/* Call Notes theme: ebony canvas, warm lacquer chrome, gold accent. Fonts are bundled so the app stays fully offline. */
 @import '@fontsource/manrope/400.css';
 @import '@fontsource/manrope/500.css';
 @import '@fontsource/manrope/600.css';
@@ -8,34 +8,34 @@
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
 :root {
-  /* palette: graphite canvas, navy chrome, muted gold accent */
-  --canvas: #12151b;
-  --surface: #191d25;
-  --raised: #20252f;
-  --line: #2a303c;
-  --line-strong: #3a4252;
-  --navy: #0f1b2e;
-  --navy-raised: #16263f;
-  --navy-select: #1c3253;
-  --navy-line: #24395a;
-  --gold: #c8a24a;
-  --gold-hi: #dec07e;
-  --gold-lo: #977733;
-  --text: #e7e9ee;
-  --text-dim: #aab1be;
-  --text-faint: #7d8696;
-  --steel: #8eb4da;
-  --rec: #e5484d;
-  --rec-soft: #3a1c20;
-  --warn: #e3a33b;
-  --warn-soft: #33270f;
-  --ok: #4fb685;
+  /* palette: ebony canvas, warm lacquer chrome, gold accent */
+  --canvas: #1a1610;
+  --surface: #231d14;
+  --raised: #2c251a;
+  --line: #3a3123;
+  --line-strong: #54472f;
+  --chrome: #211b13;
+  --chrome-raised: #2a2319;
+  --chrome-select: #362c1d;
+  --chrome-line: #3a3123;
+  --gold: #c9a24b;
+  --gold-hi: #e2c27a;
+  --gold-lo: #9c7a2e;
+  --text: #f1e8d6;
+  --text-dim: #c4b89e;
+  --text-faint: #958a73;
+  --sage: #a9c3b6;
+  --rec: #e0574f;
+  --rec-soft: #33191a;
+  --warn: #e8a33d;
+  --warn-soft: #33260f;
+  --ok: #86bd85;
 
   /* roles */
   --bg: var(--canvas);
   --surface-2: var(--raised);
   --me: var(--gold-hi);
-  --them: var(--steel);
+  --them: var(--sage);
 
   /* type */
   --font-ui: 'Manrope', 'Segoe UI', system-ui, sans-serif;
@@ -101,7 +101,7 @@ button {
 }
 .btn:hover:not(:disabled) {
   border-color: var(--line-strong);
-  background: #262c38;
+  background: #352d20;
 }
 .btn:disabled {
   opacity: 0.45;
@@ -270,7 +270,7 @@ svg {
   flex-shrink: 0;
 }
 
-/* quiet buttons sitting on navy chrome */
+/* quiet buttons sitting on the chrome */
 .side .btn.quiet:hover:not(:disabled) {
-  background: var(--navy-raised);
+  background: var(--chrome-raised);
 }
