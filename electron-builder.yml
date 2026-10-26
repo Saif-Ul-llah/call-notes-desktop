@@ -27,6 +27,8 @@ extraResources:
     to: native
     filter: ['*/index.node']
 win:
+  files:
+    - '!node_modules/@fugood/node-whisper-linux-*/**'
   target:
     - target: nsis
       arch: [x64]
@@ -37,6 +39,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
 linux:
+  files:
+    - '!node_modules/@fugood/node-whisper-win32-*/**'
   target:
     - AppImage
     - deb
