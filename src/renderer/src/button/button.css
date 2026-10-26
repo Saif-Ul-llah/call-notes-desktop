@@ -1,111 +1,127 @@
-.wrap {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
+/* Floating mini-player pill. The window is transparent; the pill leaves room for its shadow. */
+html,
+body,
+#root {
+  background: transparent;
+}
+
+#root {
   display: grid;
   place-items: center;
   user-select: none;
 }
 
-.ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  -webkit-app-region: drag;
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 14px 0 6px;
+  border-radius: 26px;
+  background: var(--navy);
+  border: 1px solid var(--navy-line);
+  box-shadow: 0 6px 18px rgba(4, 8, 16, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--text);
 }
-.ring circle {
-  fill: none;
-  stroke-width: 4;
+.pill.retrying,
+.pill.problem {
+  border-color: #5a4318;
 }
-.ring .track {
-  stroke: rgba(26, 22, 16, 0.55);
+
+/* drag areas: grip and readout move the pill */
+.grip,
+.readout {
+  cursor: grab;
+  touch-action: none;
 }
-.ring .level {
-  stroke: var(--brass-hi);
-  stroke-linecap: round;
-  transition: stroke-dasharray 90ms linear;
+.grip:active,
+.readout:active {
+  cursor: grabbing;
 }
-.wrap.idle .ring .level {
-  stroke: transparent;
+.grip {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 36px;
+  border-radius: 6px;
+  color: var(--text-faint);
 }
-.wrap.retrying .ring .level {
-  stroke: var(--warn);
+.pill:hover .grip {
+  color: var(--text-dim);
+  background: var(--navy-raised);
 }
 
 .disc {
-  -webkit-app-region: no-drag;
-  position: relative;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  border: none;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
-  color: var(--ebony);
-  background: radial-gradient(circle at 34% 28%, #f0d896 0%, var(--brass) 52%, var(--brass-lo) 100%);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.18);
-  transition: transform 0.12s ease;
-  touch-action: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: none;
+  color: var(--canvas);
+  background: var(--gold);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: background 0.12s, transform 0.1s;
 }
 .disc:hover {
-  transform: scale(1.04);
+  background: var(--gold-hi);
 }
 .disc:active {
-  transform: scale(0.96);
+  transform: scale(0.94);
+}
+.pill.live .disc,
+.pill.saving .disc,
+.pill.retrying .disc {
+  background: var(--rec-soft);
+  color: var(--rec);
+  box-shadow: inset 0 0 0 1.5px var(--rec);
+}
+.pill.live .disc:hover {
+  background: #4a2228;
+}
+.pill.retrying .disc {
+  color: var(--warn);
+  box-shadow: inset 0 0 0 1.5px var(--warn);
 }
 
-/* recording: the disc turns to ebony with a brass rim; the ring carries the voice */
-.wrap.live .disc,
-.wrap.saving .disc,
-.wrap.retrying .disc {
-  background: radial-gradient(circle at 40% 30%, #2e2618, var(--ebony) 75%);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 0 0 1.5px var(--brass);
-  color: var(--brass-hi);
+.readout {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  min-width: 64px;
 }
-.wrap.retrying .disc {
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 0 0 1.5px var(--warn);
+.label {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
-
-.rec-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--rec);
-  margin-top: -6px;
+.pill.idle .label {
+  color: var(--text);
 }
-.wrap.saving .rec-dot {
-  border-radius: 50%;
-  background: var(--brass);
-  animation: blink 1s ease-in-out infinite;
+.pill.retrying .label,
+.pill.problem .label {
+  color: var(--warn);
 }
 .time {
-  position: absolute;
-  bottom: 9px;
-  font-size: 10px;
+  font-size: var(--t-md);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2px;
 }
-
-/* status dot: loading (brass, breathing), finishing (brass), problem (amber) */
-.health {
-  position: absolute;
-  top: 9px;
-  right: 9px;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  border: 2px solid var(--ebony);
-  pointer-events: none;
+.bars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 18px;
 }
-.health.loading {
-  background: var(--brass-hi);
-  animation: blink 1.4s ease-in-out infinite;
-}
-.health.finishing {
-  background: var(--brass-hi);
-}
-.health.warn {
-  background: var(--warn);
+.bars span {
+  width: 3px;
+  height: 18px;
+  border-radius: 2px;
+  background: var(--gold-hi);
+  transform-origin: center;
+  transition: transform 80ms linear;
 }

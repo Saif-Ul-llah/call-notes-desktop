@@ -10,7 +10,7 @@ Get the Windows installer from the [Releases page](https://github.com/Saif-Ul-ll
 
 ## Features
 
-- **Floating gold button:** always on top. Click to start or stop, drag to move, right-click for the menu.
+- **Floating mini-player:** a compact pill that stays on top of every window and workspace, even over full-screen apps. Drag it by its grip (⠿) or its timer, click the mic to start or stop, double-click the mic for the live window, right-click for the menu.
 - **Shortcut:** **Ctrl+Alt+N** starts or stops a transcript from anywhere.
 - **Live transcript window:** resizable and always on top, with an opacity slider. "Me" is your microphone and "Them" is the computer's audio (the other side of the call).
 - **Library:** search every call, play the audio synced to the transcript, export to .md/.txt/.srt/.json, and resume interrupted calls.

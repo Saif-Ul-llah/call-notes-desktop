@@ -111,7 +111,7 @@ function Overlay() {
           {live && <span className="timer">{clock(elapsed)}</span>}
         </div>
         <div className="bar-actions">
-          <button className={`btn small ${live ? 'rec' : 'brass'}`} onClick={() => api.session.toggle()}>
+          <button className={`btn small ${live ? 'rec' : 'gold'}`} onClick={() => api.session.toggle()}>
             {live ? <StopIcon size={11} /> : <MicIcon size={14} />}
             {live ? 'Stop' : 'Start'}
           </button>
@@ -136,7 +136,7 @@ function Overlay() {
               <p>Listening. Speak, or play the call — words appear here as they're said.</p>
             ) : (
               <p>
-                Press the brass button or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> to start.
+                Press the floating mic or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> to start.
                 <br />
                 Your call is transcribed on this computer as it happens.
               </p>
@@ -167,7 +167,7 @@ function Overlay() {
       </div>
 
       {!follow && (
-        <button className="btn small brass jump" onClick={() => setFollow(true)}>
+        <button className="btn small gold jump" onClick={() => setFollow(true)}>
           Back to live
         </button>
       )}

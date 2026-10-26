@@ -6,7 +6,9 @@ import { join } from 'node:path'
 import type { CaptureCommand } from '../shared/capture-protocol'
 import type { SettingsStore } from './settings'
 
-const BUTTON_SIZE = 76
+// mini-player pill (152 x 52) plus room for its shadow
+const BUTTON_W = 172
+const BUTTON_H = 72
 
 let rendererLog: ((level: string, msg: string) => void) | null = null
 
@@ -58,8 +60,8 @@ export class WindowManager {
   capture: BrowserWindow | null = null
   private captureReady = false
   private captureQueue: CaptureCommand[] = []
-  private dragOrigin: { mouseX: number; mouseY: number; winX: number; winY: number } | null = null
   private saveTimer: NodeJS.Timeout | null = null
+  private dragOrigin: { mouseX: number; mouseY: number; winX: number; winY: number } | null = null
   quitting = false
 
   constructor(
@@ -130,10 +132,10 @@ export class WindowManager {
     const area = screen.getPrimaryDisplay().workArea
     const saved = this.settings.get().buttonPosition
     const pos = onScreen({
-      x: saved?.x ?? area.x + area.width - BUTTON_SIZE - 24,
+      x: saved?.x ?? area.x + area.width - BUTTON_W - 24,
       y: saved?.y ?? area.y + Math.round(area.height * 0.6),
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
+      width: BUTTON_W,
+      height: BUTTON_H,
     })
     const win = new BrowserWindow({
       ...pos,
@@ -153,15 +155,27 @@ export class WindowManager {
     win.webContents.on('render-process-gone', () => {
       if (!this.quitting) setTimeout(() => this.createButton(), 500)
     })
+    // dragged natively by its grip: remember where it was left (kept on a visible screen)
+    let saveTimer: NodeJS.Timeout | null = null
+    win.on('moved', () => {
+      if (saveTimer) clearTimeout(saveTimer)
+      saveTimer = setTimeout(() => {
+        if (win.isDestroyed()) return
+        const b = onScreen(win.getBounds())
+        if (b.x !== win.getBounds().x || b.y !== win.getBounds().y) win.setBounds(b)
+        this.settings.set({ buttonPosition: { x: b.x, y: b.y } })
+      }, 300)
+    })
     win.on('closed', () => (this.button = null))
     pageUrl(win, 'button')
     this.button = win
     return win
   }
 
+  /** Move the pill by the pointer delta (driven by its grip; works wherever the app can place windows). */
   dragButton(phase: 'start' | 'move' | 'end', x: number, y: number): void {
     const win = this.button
-    if (!win) return
+    if (!win || win.isDestroyed()) return
     if (phase === 'start') {
       const [winX, winY] = win.getPosition()
       this.dragOrigin = { mouseX: x, mouseY: y, winX, winY }
@@ -170,7 +184,7 @@ export class WindowManager {
     if (!this.dragOrigin) return
     const nx = Math.round(this.dragOrigin.winX + x - this.dragOrigin.mouseX)
     const ny = Math.round(this.dragOrigin.winY + y - this.dragOrigin.mouseY)
-    win.setBounds({ x: nx, y: ny, width: BUTTON_SIZE, height: BUTTON_SIZE })
+    win.setBounds({ x: nx, y: ny, width: BUTTON_W, height: BUTTON_H })
     if (phase === 'end') {
       this.dragOrigin = null
       const b = onScreen(win.getBounds())
@@ -202,7 +216,7 @@ export class WindowManager {
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,
-      backgroundColor: '#1a1610',
+      backgroundColor: '#12151b',
       title: 'Call Notes — Live transcript',
       webPreferences: { preload: preload() },
     })
@@ -252,7 +266,7 @@ export class WindowManager {
       minHeight: 480,
       show: false,
       title: 'Call Notes',
-      backgroundColor: '#1a1610',
+      backgroundColor: '#12151b',
       autoHideMenuBar: true,
       webPreferences: { preload: preload() },
     })

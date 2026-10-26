@@ -1,4 +1,4 @@
-/* Call Notes — "ebony & brass". Fonts are bundled so the app stays fully offline. */
+/* Call Notes theme: graphite canvas, navy chrome, muted gold accent. Fonts are bundled so the app stays fully offline. */
 @import '@fontsource/manrope/400.css';
 @import '@fontsource/manrope/500.css';
 @import '@fontsource/manrope/600.css';
@@ -8,32 +8,34 @@
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
 :root {
-  /* palette */
-  --ebony: #1a1610;
-  --lacquer: #231d14;
-  --lacquer-2: #2c251a;
-  --rule: #3a3123;
-  --rule-strong: #54472f;
-  --brass: #c9a24b;
-  --brass-hi: #e2c27a;
-  --brass-lo: #9c7a2e;
-  --ivory: #f1e8d6;
-  --ivory-dim: #c4b89e;
-  --ivory-faint: #958a73;
-  --sage: #a9c3b6;
-  --rec: #e0574f;
-  --warn: #e8a33d;
-  --ok: #86bd85;
+  /* palette: graphite canvas, navy chrome, muted gold accent */
+  --canvas: #12151b;
+  --surface: #191d25;
+  --raised: #20252f;
+  --line: #2a303c;
+  --line-strong: #3a4252;
+  --navy: #0f1b2e;
+  --navy-raised: #16263f;
+  --navy-select: #1c3253;
+  --navy-line: #24395a;
+  --gold: #c8a24a;
+  --gold-hi: #dec07e;
+  --gold-lo: #977733;
+  --text: #e7e9ee;
+  --text-dim: #aab1be;
+  --text-faint: #7d8696;
+  --steel: #8eb4da;
+  --rec: #e5484d;
+  --rec-soft: #3a1c20;
+  --warn: #e3a33b;
+  --warn-soft: #33270f;
+  --ok: #4fb685;
 
   /* roles */
-  --bg: var(--ebony);
-  --surface: var(--lacquer);
-  --surface-2: var(--lacquer-2);
-  --text: var(--ivory);
-  --text-dim: var(--ivory-dim);
-  --text-faint: var(--ivory-faint);
-  --me: var(--brass-hi);
-  --them: var(--sage);
+  --bg: var(--canvas);
+  --surface-2: var(--raised);
+  --me: var(--gold-hi);
+  --them: var(--steel);
 
   /* type */
   --font-ui: 'Manrope', 'Segoe UI', system-ui, sans-serif;
@@ -44,7 +46,6 @@
   --t-read: 15.5px;
   --t-lg: 18px;
   --t-xl: 22px;
-
   --scale: 1;
 
   /* shape */
@@ -79,7 +80,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brass-hi);
+  outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
 }
 
@@ -91,7 +92,7 @@ button {
   height: 32px;
   padding: 0 12px;
   border-radius: var(--r-s);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--text);
   font-weight: 500;
@@ -99,30 +100,30 @@ button {
   transition: background 0.12s, border-color 0.12s;
 }
 .btn:hover:not(:disabled) {
-  border-color: var(--rule-strong);
-  background: #352d20;
+  border-color: var(--line-strong);
+  background: #262c38;
 }
 .btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
-.btn.brass {
-  background: var(--brass);
-  border-color: var(--brass-lo);
-  color: var(--ebony);
+.btn.gold {
+  background: var(--gold);
+  border-color: var(--gold-lo);
+  color: var(--canvas);
   font-weight: 700;
 }
-.btn.brass:hover:not(:disabled) {
-  background: var(--brass-hi);
-  border-color: var(--brass);
+.btn.gold:hover:not(:disabled) {
+  background: var(--gold-hi);
+  border-color: var(--gold);
 }
 .btn.rec {
   background: transparent;
-  border-color: #6b2c27;
-  color: #f2a29c;
+  border-color: #6a2a2e;
+  color: #f4a6a8;
 }
 .btn.rec:hover:not(:disabled) {
-  background: #3a1d19;
+  background: var(--rec-soft);
   border-color: var(--rec);
 }
 .btn.quiet {
@@ -154,23 +155,23 @@ select {
   font: inherit;
   color: var(--text);
   background: var(--bg);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--line);
   border-radius: var(--r-s);
   padding: 7px 10px;
   outline: none;
 }
 input:focus,
 select:focus {
-  border-color: var(--brass);
+  border-color: var(--gold);
 }
 input[type='range'] {
-  accent-color: var(--brass);
+  accent-color: var(--gold);
   padding: 0;
   border: none;
   background: transparent;
 }
 input[type='checkbox'] {
-  accent-color: var(--brass);
+  accent-color: var(--gold);
   width: 16px;
   height: 16px;
   margin: 2px 0 0;
@@ -197,8 +198,8 @@ input[type='checkbox'] {
   background: currentColor;
 }
 .pill.live {
-  color: #f2a29c;
-  background: #33191a;
+  color: #f4a6a8;
+  background: var(--rec-soft);
 }
 .pill.live .dot {
   background: var(--rec);
@@ -206,13 +207,13 @@ input[type='checkbox'] {
 }
 .pill.warn {
   color: var(--warn);
-  background: #33260f;
+  background: var(--warn-soft);
 }
 .pill.ok {
   color: var(--ok);
 }
-.pill.brass {
-  color: var(--brass-hi);
+.pill.gold {
+  color: var(--gold-hi);
 }
 
 @keyframes blink {
@@ -237,10 +238,10 @@ kbd {
   font-size: var(--t-xs);
   font-weight: 600;
   padding: 1px 6px;
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--line-strong);
   border-bottom-width: 2px;
   border-radius: 4px;
-  color: var(--brass-hi);
+  color: var(--gold-hi);
 }
 
 ::-webkit-scrollbar {
@@ -248,7 +249,7 @@ kbd {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--rule);
+  background: var(--line);
   border-radius: 10px;
   border: 3px solid var(--bg);
 }
@@ -267,4 +268,9 @@ kbd {
 
 svg {
   flex-shrink: 0;
+}
+
+/* quiet buttons sitting on navy chrome */
+.side .btn.quiet:hover:not(:disabled) {
+  background: var(--navy-raised);
 }

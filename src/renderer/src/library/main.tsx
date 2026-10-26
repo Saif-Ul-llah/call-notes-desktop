@@ -59,7 +59,7 @@ function Library() {
         </div>
 
         <div className="record-card">
-          <button className={`btn ${recording ? 'rec' : 'brass'} record-btn`} onClick={() => api.session.toggle()}>
+          <button className={`btn ${recording ? 'rec' : 'gold'} record-btn`} onClick={() => api.session.toggle()}>
             {recording ? <StopIcon size={12} /> : <MicIcon size={16} />}
             {recording ? `Stop  ${clock(elapsed)}` : 'Start transcript'}
           </button>
@@ -120,7 +120,7 @@ function Library() {
             <Glyph size={44} />
             <h1>Transcribe your next call</h1>
             <p>
-              Press <b>Start transcript</b>, the brass button on your screen, or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>. Call Notes writes
+              Press <b>Start transcript</b>, the floating mic on your screen, or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>. Call Notes writes
               English and Roman Urdu/Hindi as people speak, entirely on this computer.
             </p>
           </div>

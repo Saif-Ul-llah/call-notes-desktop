@@ -286,8 +286,8 @@ app.whenReady().then(() => {
   ipcMain.on('win:show-overlay', () => windows.showOverlay())
   ipcMain.on('win:hide-overlay', () => windows.hideOverlay())
   ipcMain.on('win:open-library', () => windows.openLibrary())
-  ipcMain.on('win:drag-button', (_e, phase: 'start' | 'move' | 'end', x: number, y: number) => windows.dragButton(phase, x, y))
   ipcMain.on('win:overlay-opacity', (_e, v: number) => windows.setOverlayOpacity(v))
+  ipcMain.on('win:drag-button', (_e, phase: 'start' | 'move' | 'end', x: number, y: number) => windows.dragButton(phase, x, y))
   ipcMain.on('win:button-menu', () => buttonMenu().popup({ window: windows.button ?? undefined }))
 
   // ---------------------------------------------------------------- menus & tray
@@ -358,15 +358,6 @@ app.whenReady().then(() => {
   const autoStart = Number(process.env.CALLNOTES_AUTOSTART_MS || 0)
   const autoStop = Number(process.env.CALLNOTES_AUTOSTOP_MS || 0)
   if (autoStart) setTimeout(toggleSession, autoStart)
-  if (process.env.CALLNOTES_SELFTEST_DRAG) {
-    setTimeout(() => {
-      const before = windows.button?.getPosition()
-      windows.dragButton('start', 500, 500)
-      windows.dragButton('move', 400, 450)
-      windows.dragButton('end', 300, 400)
-      log('info', `selftest drag: ${before} -> ${windows.button?.getPosition()} (saved ${JSON.stringify(settings.get().buttonPosition)})`)
-    }, 4000)
-  }
   const shotsDir = process.env.CALLNOTES_SCREENSHOTS
   if (shotsDir && autoStart) {
     setTimeout(async () => {

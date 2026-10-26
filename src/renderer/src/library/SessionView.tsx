@@ -166,7 +166,7 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
 
         <div className="toolbar">
           {session.status === 'interrupted' && !liveSessionId && (
-            <button className="btn brass" onClick={() => api.session.resume(id)} title="Start a new recording that continues this call">
+            <button className="btn gold" onClick={() => api.session.resume(id)} title="Start a new recording that continues this call">
               <ResumeIcon size={15} />
               Continue this call
             </button>

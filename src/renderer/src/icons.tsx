@@ -103,11 +103,11 @@ export const SparkIcon = (p: P) => (
   </Svg>
 )
 
-/** Wordmark glyph: three brass bars like a voice level. */
+/** Wordmark glyph: three gold bars like a voice level. */
 export const Glyph = ({ size = 18 }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-    <rect x="4" y="9" width="3.4" height="6" rx="1.7" fill="var(--brass-lo)" />
-    <rect x="10.3" y="4.5" width="3.4" height="15" rx="1.7" fill="var(--brass)" />
-    <rect x="16.6" y="7" width="3.4" height="10" rx="1.7" fill="var(--brass-hi)" />
+    <rect x="4" y="9" width="3.4" height="6" rx="1.7" fill="var(--gold-lo)" />
+    <rect x="10.3" y="4.5" width="3.4" height="15" rx="1.7" fill="var(--gold)" />
+    <rect x="16.6" y="7" width="3.4" height="10" rx="1.7" fill="var(--gold-hi)" />
   </svg>
 )

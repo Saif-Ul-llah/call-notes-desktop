@@ -78,12 +78,12 @@ export function isLive(s: LiveStatus): boolean {
 export function StatusPill({ status }: { status: LiveStatus }) {
   const [cls, label] =
     status.status === 'recording' ? ['live', 'Listening']
-    : status.status === 'starting' ? ['brass', 'Starting']
+    : status.status === 'starting' ? ['gold', 'Starting']
     : status.status === 'retrying' ? ['warn', 'Reconnecting']
-    : status.status === 'stopping' ? ['brass', 'Saving']
+    : status.status === 'stopping' ? ['gold', 'Saving']
     : status.engine === 'restarting' ? ['warn', 'Restarting engine']
-    : status.engine === 'loading' ? ['brass', 'Loading model']
-    : status.pendingJobs > 0 ? ['brass', `Finishing ${status.pendingJobs}`]
+    : status.engine === 'loading' ? ['gold', 'Loading model']
+    : status.pendingJobs > 0 ? ['gold', `Finishing ${status.pendingJobs}`]
     : ['ok', 'Ready']
   return (
     <span className={`pill ${cls}`} role="status">

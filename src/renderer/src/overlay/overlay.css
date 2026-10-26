@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-m);
   overflow: hidden;
   position: relative;
@@ -17,8 +17,8 @@
   gap: 8px;
   height: 44px;
   padding: 0 8px 0 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--rule);
+  background: var(--navy);
+  border-bottom: 1px solid var(--navy-line);
   user-select: none;
 }
 .bar-left {
@@ -41,7 +41,7 @@
   flex-shrink: 0;
 }
 .bar-actions .btn.rec,
-.bar-actions .btn.brass {
+.bar-actions .btn.gold {
   margin-right: 4px;
 }
 
@@ -49,8 +49,8 @@
   padding: 7px 14px;
   font-size: var(--t-sm);
   color: var(--warn);
-  background: #2a2010;
-  border-bottom: 1px solid #4a3818;
+  background: var(--warn-soft);
+  border-bottom: 1px solid #4d3a17;
 }
 
 .list {
@@ -100,7 +100,7 @@
   height: 1em;
   margin-left: 3px;
   vertical-align: -2px;
-  background: var(--brass);
+  background: var(--gold);
   animation: blink 1s steps(2, start) infinite;
 }
 
@@ -135,8 +135,8 @@
   padding: 0 12px;
   font-size: var(--t-xs);
   color: var(--text-faint);
-  background: var(--surface);
-  border-top: 1px solid var(--rule);
+  background: var(--navy);
+  border-top: 1px solid var(--navy-line);
 }
 .meters {
   display: flex;
@@ -152,7 +152,7 @@
   width: 46px;
   height: 4px;
   border-radius: 2px;
-  background: var(--lacquer-2);
+  background: var(--navy-select);
   overflow: hidden;
 }
 .meter-fill {
