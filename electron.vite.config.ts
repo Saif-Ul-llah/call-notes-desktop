@@ -26,6 +26,8 @@ export default defineConfig({
     root: resolve(__dirname, 'src/renderer'),
     plugins: [react()],
     build: {
+      // ship fonts as files: inlined data: URIs are blocked by the pages' CSP
+      assetsInlineLimit: 0,
       rollupOptions: {
         input: {
           button: resolve(__dirname, 'src/renderer/button.html'),

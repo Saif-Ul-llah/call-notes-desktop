@@ -45,6 +45,8 @@ linux:
     - AppImage
     - deb
   category: Office
+  # floating button needs X11 positioning/always-on-top (Wayland forbids both)
+  executableArgs: ['--ozone-platform=x11']
   icon: resources/icons/icon.png
   maintainer: Call Notes
 deb:

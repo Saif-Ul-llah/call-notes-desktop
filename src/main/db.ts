@@ -30,6 +30,7 @@ const toSession = (r: Row): SessionInfo => ({
   dir: r.dir as string,
   parentId: (r.parent_id as string | null) ?? null,
   segmentCount: (r.segment_count as number | undefined) ?? undefined,
+  snippet: (r.snippet as string | null | undefined) ?? undefined,
 })
 
 const toSegment = (r: Row): Segment => ({
@@ -130,7 +131,9 @@ export class Store {
   listSessions(query = '', limit = 200): SessionInfo[] {
     const q = query.trim()
     const sql = `
-      SELECT s.*, (SELECT COUNT(*) FROM segments g WHERE g.session_id = s.id) AS segment_count
+      SELECT s.*,
+        (SELECT COUNT(*) FROM segments g WHERE g.session_id = s.id AND g.speaker != 'Notice') AS segment_count,
+        (SELECT g.text FROM segments g WHERE g.session_id = s.id AND g.speaker != 'Notice' ORDER BY g.start_ms LIMIT 1) AS snippet
       FROM sessions s
       ${q ? `WHERE s.title LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM segments g WHERE g.session_id = s.id AND g.text LIKE ? ESCAPE '\\')` : ''}
       ORDER BY s.started_at DESC LIMIT ?`

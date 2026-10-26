@@ -187,7 +187,7 @@ export class WindowManager {
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,
-      backgroundColor: '#121212',
+      backgroundColor: '#1a1610',
       title: 'Call Notes — Live transcript',
       webPreferences: { preload: preload() },
     })
@@ -238,7 +238,7 @@ export class WindowManager {
       minHeight: 480,
       show: false,
       title: 'Call Notes',
-      backgroundColor: '#121212',
+      backgroundColor: '#1a1610',
       autoHideMenuBar: true,
       webPreferences: { preload: preload() },
     })

@@ -1,16 +1,45 @@
 import { createRoot } from 'react-dom/client'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import '../theme.css'
 import './overlay.css'
-import { api, clock, isLive, MicIcon, StatusChip, StopIcon, useElapsed, useLiveStatus } from '../common'
+import { api, clock, isLive, speakerClass, StatusPill, useElapsed, useLevel, useLiveStatus } from '../common'
+import { CheckIcon, CloseIcon, CopyIcon, Glyph, LibraryIcon, MicIcon, StopIcon } from '../icons'
 import type { PartialLine, Segment, StreamId } from '../../../shared/types'
 import { formatClock } from '../../../shared/transcript-format'
 
-const speakerClass = (s: string) => (s === 'Me' ? 'speaker-me' : s === 'Notice' ? 'speaker-notice' : 'speaker-them')
+interface Turn {
+  speaker: string
+  startMs: number
+  lines: Segment[]
+}
+
+/** Consecutive lines from the same speaker read as one turn. */
+function toTurns(segments: Segment[]): Turn[] {
+  const turns: Turn[] = []
+  for (const seg of segments) {
+    const last = turns[turns.length - 1]
+    if (last && last.speaker === seg.speaker && seg.startMs - last.lines[last.lines.length - 1].endMs < 6000) last.lines.push(seg)
+    else turns.push({ speaker: seg.speaker, startMs: seg.startMs, lines: [seg] })
+  }
+  return turns
+}
+
+function Meter({ label, value, tone }: { label: string; value: number; tone: 'me' | 'them' }) {
+  return (
+    <span className="meter" title={`${label} input level`}>
+      <span className="meter-label">{label}</span>
+      <span className="meter-track">
+        <span className={`meter-fill ${tone}`} style={{ transform: `scaleX(${Math.max(0.02, value)})` }} />
+      </span>
+    </span>
+  )
+}
 
 function Overlay() {
   const status = useLiveStatus()
-  const elapsed = useElapsed(isLive(status) ? status.startedAt : null)
+  const level = useLevel()
+  const live = isLive(status)
+  const elapsed = useElapsed(live ? status.startedAt : null)
   const [segments, setSegments] = useState<Segment[]>([])
   const [partials, setPartials] = useState<Partial<Record<StreamId, PartialLine>>>({})
   const [opacity, setOpacity] = useState(0.95)
@@ -53,14 +82,16 @@ function Overlay() {
     return () => offs.forEach((off) => off())
   }, [])
 
+  const turns = useMemo(() => toTurns(segments), [segments])
+  const previews = Object.values(partials).filter((p): p is PartialLine => !!p?.text)
+
   useLayoutEffect(() => {
     if (follow && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
-  }, [segments, partials, follow])
+  }, [turns, previews.length, partials, follow])
 
   const onScroll = () => {
     const el = listRef.current
-    if (!el) return
-    setFollow(el.scrollHeight - el.scrollTop - el.clientHeight < 40)
+    if (el) setFollow(el.scrollHeight - el.scrollTop - el.clientHeight < 40)
   }
 
   const copyAll = async () => {
@@ -70,31 +101,27 @@ function Overlay() {
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const live = isLive(status)
-  const partialLines = Object.values(partials).filter((p): p is PartialLine => !!p?.text)
-
   return (
     <div className="overlay">
       <header className="bar">
-        <div className="title">
-          <span className="logo">●</span>
-          <strong>Live transcript</strong>
-          <StatusChip status={status} />
+        <div className="bar-left">
+          <Glyph />
+          <StatusPill status={status} />
           {live && <span className="timer">{clock(elapsed)}</span>}
         </div>
-        <div className="actions">
-          <button className={`btn icon ${live ? 'danger' : 'primary'}`} onClick={() => api.session.toggle()} title={live ? 'Stop' : 'Start'}>
-            {live ? <StopIcon size={14} /> : <MicIcon size={14} />}
+        <div className="bar-actions">
+          <button className={`btn small ${live ? 'rec' : 'brass'}`} onClick={() => api.session.toggle()}>
+            {live ? <StopIcon size={11} /> : <MicIcon size={14} />}
             {live ? 'Stop' : 'Start'}
           </button>
-          <button className="btn icon" onClick={copyAll} title="Copy transcript" disabled={segments.length === 0}>
-            {copied ? 'Copied' : 'Copy'}
+          <button className="btn small icon quiet" onClick={copyAll} title="Copy transcript" aria-label="Copy transcript" disabled={segments.length === 0}>
+            {copied ? <CheckIcon size={15} /> : <CopyIcon size={15} />}
           </button>
-          <button className="btn icon" onClick={() => api.win.openLibrary()} title="Open library">
-            ☰
+          <button className="btn small icon quiet" onClick={() => api.win.openLibrary()} title="Open library" aria-label="Open library">
+            <LibraryIcon size={15} />
           </button>
-          <button className="btn icon" onClick={() => api.win.hideOverlay()} title="Hide">
-            ✕
+          <button className="btn small icon quiet" onClick={() => api.win.hideOverlay()} title="Hide window" aria-label="Hide window">
+            <CloseIcon size={15} />
           </button>
         </div>
       </header>
@@ -102,46 +129,58 @@ function Overlay() {
       {status.message && <div className="banner">{status.message}</div>}
 
       <div className="list" ref={listRef} onScroll={onScroll}>
-        {segments.length === 0 && partialLines.length === 0 && (
+        {turns.length === 0 && previews.length === 0 && (
           <div className="empty">
             {live ? (
-              <>Listening… speak or play the call audio.</>
+              <p>Listening. Speak, or play the call — words appear here as they're said.</p>
             ) : (
-              <>
-                Press the gold button or <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> to start transcribing.
-              </>
+              <p>
+                Press the brass button or <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd> to start.
+                <br />
+                Your call is transcribed on this computer as it happens.
+              </p>
             )}
           </div>
         )}
-        {segments.map((s) => (
-          <p key={s.id} className="line">
-            <span className="ts">{formatClock(s.startMs)}</span>
-            <span className={`who ${speakerClass(s.speaker)}`}>{s.speaker}</span>
-            <span className="text">{s.text}</span>
-          </p>
+        {turns.map((t) => (
+          <section key={t.lines[0].id} className="turn">
+            <div className="turn-head">
+              <span className={`who ${speakerClass(t.speaker)}`}>{t.speaker}</span>
+              <span className="ts">{formatClock(t.startMs)}</span>
+            </div>
+            <p className={`text ${t.speaker === 'Notice' ? 'notice' : ''}`}>{t.lines.map((l) => l.text).join(' ')}</p>
+          </section>
         ))}
-        {partialLines.map((p) => (
-          <p key={`partial-${p.stream}`} className="line partial">
-            <span className="ts">…</span>
-            <span className={`who ${speakerClass(p.speaker)}`}>{p.speaker}</span>
-            <span className="text">{p.text}</span>
-          </p>
+        {previews.map((p) => (
+          <section key={`preview-${p.stream}`} className="turn preview" aria-live="polite">
+            <div className="turn-head">
+              <span className={`who ${speakerClass(p.speaker)}`}>{p.speaker}</span>
+              <span className="ts">speaking</span>
+            </div>
+            <p className="text">
+              {p.text}
+              <span className="caret" />
+            </p>
+          </section>
         ))}
       </div>
 
       {!follow && (
-        <button className="btn primary jump" onClick={() => setFollow(true)}>
-          ↓ Jump to live
+        <button className="btn small brass jump" onClick={() => setFollow(true)}>
+          Back to live
         </button>
       )}
 
       <footer className="foot">
-        <span>{status.model ? `Model: ${status.model}` : ''}</span>
-        <label title="Window opacity">
+        <div className="meters">
+          <Meter label="You" value={live ? level.mic : 0} tone="me" />
+          <Meter label="Call" value={live ? level.system : 0} tone="them" />
+        </div>
+        <label className="opacity" title="Window opacity">
           <span>Opacity</span>
           <input
             type="range"
-            min={0.3}
+            min={0.35}
             max={1}
             step={0.05}
             value={opacity}

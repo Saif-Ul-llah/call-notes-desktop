@@ -64,6 +64,8 @@ export interface SessionManagerEvents {
   'segment-removed': [{ sessionId: string; id: string }]
   partial: [PartialLine]
   saved: [SessionInfo]
+  /** smoothed input levels 0..1 for the UI meters (~15 Hz) */
+  level: [{ mic: number; system: number }]
 }
 
 export function systemCaptureMode(enabled: boolean): SystemCaptureMode {
@@ -81,6 +83,8 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
   private message: string | null = null
   private writeTimers = new Map<string, NodeJS.Timeout>()
   private stopWaiter: (() => void) | null = null
+  private levels = { mic: 0, system: 0 }
+  private lastLevelAt = 0
 
   constructor(
     private store: Store,
@@ -330,6 +334,7 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
     }
     st.lastDataAt = now
     if (st.status !== 'active') this.onStreamRecovered(cur, stream, st)
+    this.meter(stream, pcm, now)
 
     for (const ev of st.slicer.push(pcm)) {
       if (ev.type === 'final') this.handleFinalSlice(cur, stream, st, ev.audio, ev.startMs, ev.endMs)
@@ -342,6 +347,19 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
           prompt: this.promptFor(cur, st),
         })
       }
+    }
+  }
+
+  private meter(stream: StreamId, pcm: Int16Array, now: number): void {
+    let sum = 0
+    for (let i = 0; i < pcm.length; i++) sum += pcm[i] * pcm[i]
+    const rms = Math.sqrt(sum / Math.max(1, pcm.length)) / 32768
+    // speech around -30 dBFS lands mid-scale; fast attack, slow release
+    const value = Math.min(1, Math.max(0, (20 * Math.log10(rms + 1e-6) + 60) / 50))
+    this.levels[stream] = Math.max(value, this.levels[stream] * 0.8)
+    if (now - this.lastLevelAt >= 66) {
+      this.lastLevelAt = now
+      this.emit('level', { ...this.levels })
     }
   }
 
@@ -467,9 +485,10 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
 
   // ------------------------------------------------------------------ engine results
 
-  private onFinal(r: { id: string; stream: StreamId; text: string; noSpeech: boolean }): void {
+  private onFinal(r: { id: string; stream: StreamId; text: string; noSpeech: boolean; processMs: number; audioMs: number }): void {
     const job = this.store.getJob(r.id)
     if (!job) return
+    this.log('debug', `final ${job.stream} ${job.startMs}-${job.endMs}ms: ${r.processMs} ms for ${r.audioMs} ms audio${r.noSpeech ? ' (no speech)' : ''}`)
     const text = r.noSpeech ? '' : cleanTranscript(r.text)
     if (text) {
       const seg: Segment = {

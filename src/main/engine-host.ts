@@ -74,8 +74,8 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
   private initFailures = 0
   private stopping = false
   private nativeOk = true
-  /** recent processing speed (process ms per audio ms) to decide if partials are affordable */
-  private speed = 0.3
+  /** processing speed of finals (process ms per audio ms); previews only run while finals keep up easily */
+  private finalSpeed = 0.3
 
   constructor(private opts: EngineHostOptions) {
     super()
@@ -133,8 +133,11 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
   offerPartial(job: PartialJob): void {
     if (this.status !== 'ready' && this.status !== 'busy') return
     if (this.finals.length > 0) return
+    // previews are a luxury: skip them when finals are slower than half real time
+    // (busy CPU, big model), so committed text never falls behind
+    if (this.finalSpeed > 0.5) return
     const audioMs = job.pcm.byteLength / 32
-    if (audioMs * this.speed > 2500) return
+    if (audioMs * this.finalSpeed > 2500) return
     this.partials.set(job.stream, job)
     this.pump()
   }
@@ -211,7 +214,9 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
         break
       case 'result':
         this.finishInflight(msg.id)
-        if (msg.audioMs > 0 && !msg.noSpeech) this.speed = this.speed * 0.7 + (msg.processMs / msg.audioMs) * 0.3
+        if (msg.kind === 'final' && msg.audioMs > 0 && !msg.noSpeech) {
+          this.finalSpeed = this.finalSpeed * 0.6 + (msg.processMs / msg.audioMs) * 0.4
+        }
         if (msg.kind === 'final') {
           this.emit('final', { id: msg.id, stream: msg.stream, text: msg.text, noSpeech: msg.noSpeech, processMs: msg.processMs, audioMs: msg.audioMs })
         } else {

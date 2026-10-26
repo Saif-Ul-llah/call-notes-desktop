@@ -20,7 +20,9 @@ export function defaultSettings(): Settings {
     overlayBounds: null,
     buttonPosition: null,
     launchAtLogin: false,
-    threads: Math.max(2, Math.min(8, cpus().length - 2)),
+    // ~physical cores, capped at 4: whisper.cpp threads busy-wait, so oversubscribing a
+    // laptop that also runs the call app makes transcription several times slower
+    threads: Math.max(2, Math.min(4, Math.floor(cpus().length / 2))),
     useGpu: false,
     showPartials: true,
   }

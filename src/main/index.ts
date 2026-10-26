@@ -23,6 +23,21 @@ const PROBE_TIMEOUT_MS = 25000
 // Ctrl+Shift+T would hijack browsers' "reopen closed tab"; Ctrl+Alt+T opens a terminal on Ubuntu
 const SHORTCUT = 'CommandOrControl+Alt+N'
 
+// Wayland doesn't let apps position their own windows or reliably keep them on top,
+// which the floating button needs, so run through XWayland. The platform must be
+// chosen on the real command line (appendSwitch is too late and crashes the GPU
+// process), hence a relaunch. Installed builds already pass it; opt out: CALLNOTES_WAYLAND=1
+if (
+  process.platform === 'linux' &&
+  process.env.XDG_SESSION_TYPE === 'wayland' &&
+  !process.env.CALLNOTES_WAYLAND &&
+  // Electron itself sets ozone-platform=wayland, so look for our flag on the real argv
+  !process.argv.includes('--ozone-platform=x11')
+) {
+  app.relaunch({ args: [...process.argv.slice(1), '--ozone-platform=x11'] })
+  app.exit(0)
+}
+
 // Dev/test: keep all data (settings, db, transcripts) in a separate folder
 if (process.env.CALLNOTES_DATA_DIR) app.setPath('userData', process.env.CALLNOTES_DATA_DIR)
 
@@ -119,6 +134,9 @@ app.whenReady().then(() => {
     if (p.text) livePartials.set(p.stream, p)
     else livePartials.delete(p.stream)
     windows.broadcast('live:partial', p)
+  })
+  mgr.on('level', (l) => {
+    for (const w of [windows.button, windows.overlay]) if (w && !w.isDestroyed()) w.webContents.send('live:level', l)
   })
   mgr.on('saved', () => {
     livePartials.clear()
@@ -333,6 +351,15 @@ app.whenReady().then(() => {
   const autoStart = Number(process.env.CALLNOTES_AUTOSTART_MS || 0)
   const autoStop = Number(process.env.CALLNOTES_AUTOSTOP_MS || 0)
   if (autoStart) setTimeout(toggleSession, autoStart)
+  if (process.env.CALLNOTES_SELFTEST_DRAG) {
+    setTimeout(() => {
+      const before = windows.button?.getPosition()
+      windows.dragButton('start', 500, 500)
+      windows.dragButton('move', 400, 450)
+      windows.dragButton('end', 300, 400)
+      log('info', `selftest drag: ${before} -> ${windows.button?.getPosition()} (saved ${JSON.stringify(settings.get().buttonPosition)})`)
+    }, 4000)
+  }
   const shotsDir = process.env.CALLNOTES_SCREENSHOTS
   if (shotsDir && autoStart) {
     setTimeout(async () => {

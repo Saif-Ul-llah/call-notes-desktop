@@ -1,4 +1,5 @@
 .wrap {
+  position: relative;
   width: 100vw;
   height: 100vh;
   display: grid;
@@ -6,67 +7,83 @@
   user-select: none;
 }
 
-.fab {
+.ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+.ring circle {
+  fill: none;
+  stroke-width: 4;
+}
+.ring .track {
+  stroke: rgba(26, 22, 16, 0.55);
+}
+.ring .level {
+  stroke: var(--brass-hi);
+  stroke-linecap: round;
+  transition: stroke-dasharray 90ms linear;
+}
+.wrap.idle .ring .level {
+  stroke: transparent;
+}
+.wrap.retrying .ring .level {
+  stroke: var(--warn);
+}
+
+.disc {
+  -webkit-app-region: no-drag;
   position: relative;
-  width: 60px;
-  height: 60px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  border: 2px solid var(--gold-dark);
-  background: radial-gradient(circle at 35% 30%, #fbe7a6, var(--gold) 55%, var(--gold-dark));
-  color: #1a1408;
+  border: none;
   display: grid;
   place-items: center;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  color: var(--ebony);
+  background: radial-gradient(circle at 34% 28%, #f0d896 0%, var(--brass) 52%, var(--brass-lo) 100%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.18);
   transition: transform 0.12s ease;
   touch-action: none;
 }
-.fab:hover {
-  transform: scale(1.05);
+.disc:hover {
+  transform: scale(1.04);
 }
-.fab:active {
+.disc:active {
   transform: scale(0.96);
 }
 
-.fab.recording {
-  background: radial-gradient(circle at 35% 30%, #2d2616, #1a160c 70%);
-  color: var(--danger);
-  border-color: var(--gold);
+/* recording: the disc turns to ebony with a brass rim; the ring carries the voice */
+.wrap.live .disc,
+.wrap.saving .disc,
+.wrap.retrying .disc {
+  background: radial-gradient(circle at 40% 30%, #2e2618, var(--ebony) 75%);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 0 0 1.5px var(--brass);
+  color: var(--brass-hi);
 }
-.fab.recording::after,
-.fab.retrying::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
+.wrap.retrying .disc {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 0 0 1.5px var(--warn);
+}
+
+.rec-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--rec);
+  margin-top: -6px;
+}
+.wrap.saving .rec-dot {
   border-radius: 50%;
-  border: 2px solid var(--gold);
-  animation: pulse 1.6s ease-out infinite;
+  background: var(--brass);
+  animation: blink 1s ease-in-out infinite;
 }
-.fab.retrying {
-  background: radial-gradient(circle at 35% 30%, #2d2616, #1a160c 70%);
-  color: var(--warn);
-  border-color: var(--warn);
-}
-.fab.retrying::after {
-  border-color: var(--warn);
-  animation-duration: 0.8s;
-}
-
-.fab .time {
+.time {
   position: absolute;
-  bottom: 7px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  color: var(--gold-light);
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(0.92);
-    opacity: 0.9;
-  }
-  100% {
-    transform: scale(1.18);
-    opacity: 0;
-  }
+  bottom: 9px;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
 }

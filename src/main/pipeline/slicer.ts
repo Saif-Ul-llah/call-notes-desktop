@@ -22,12 +22,12 @@ export interface SlicerOptions {
 export const DEFAULT_SLICER_OPTIONS: SlicerOptions = {
   sampleRate: 16000,
   frameMs: 30,
-  minSilenceMs: 700,
-  maxSliceMs: 15000,
+  minSilenceMs: 550,
+  maxSliceMs: 10000,
   minSpeechMs: 350,
   preRollMs: 300,
   tailMs: 250,
-  partialEveryMs: 2000,
+  partialEveryMs: 1000,
   minRms: 0.004,
   speechRatio: 2.5,
 }

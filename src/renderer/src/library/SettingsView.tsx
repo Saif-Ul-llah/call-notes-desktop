@@ -3,6 +3,18 @@ import { api } from '../common'
 import type { ModelInfo } from '../../../shared/api'
 import type { Settings } from '../../../shared/types'
 
+function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
+  return (
+    <label className="toggle">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span>
+        <span className="toggle-label">{label}</span>
+        {hint && <span className="toggle-hint">{hint}</span>}
+      </span>
+    </label>
+  )
+}
+
 export function SettingsView() {
   const [s, setS] = useState<Settings | null>(null)
   const [models, setModels] = useState<ModelInfo[]>([])
@@ -24,56 +36,49 @@ export function SettingsView() {
 
   if (!s) return null
   const set = (patch: Partial<Settings>) => void api.settings.set(patch).then(setS)
-  const systemLabel =
-    api.platform === 'linux' ? 'Captured from the PipeWire/PulseAudio monitor of your speakers.' : 'Captured with Windows audio loopback.'
+  const callAudio = api.platform === 'linux' ? 'Heard through your speakers via PipeWire/PulseAudio.' : 'Heard through Windows audio loopback.'
 
   return (
     <div className="settings-view">
-      <h2>Settings</h2>
+      <h1>Settings</h1>
 
       <section>
-        <h3>Transcription</h3>
-        <label className="field">
-          <span>Language</span>
-          <select value={s.language} onChange={(e) => set({ language: e.target.value as Settings['language'] })}>
-            <option value="roman">Roman Urdu / Hindi (with English)</option>
+        <h2>Transcription</h2>
+        <div className="field">
+          <label htmlFor="lang">Spoken language</label>
+          <select id="lang" value={s.language} onChange={(e) => set({ language: e.target.value as Settings['language'] })}>
+            <option value="roman">Roman Urdu / Hindi, mixed with English</option>
             <option value="en">English only</option>
-            <option value="auto">Auto detect</option>
+            <option value="auto">Detect automatically</option>
           </select>
-          <small>Output is always written in English letters (A–Z), like Google voice typing.</small>
-        </label>
-        <label className="field">
-          <span>Speech model</span>
-          <select value={s.model} onChange={(e) => set({ model: e.target.value as Settings['model'] })}>
-            <option value="auto">Automatic {s.autoModel ? `(using ${s.autoModel})` : '(benchmark on first run)'}</option>
+          <p className="field-hint">Text is always written in English letters, the way people type Hinglish and Roman Urdu.</p>
+        </div>
+        <div className="field">
+          <label htmlFor="model">Speech model</label>
+          <select id="model" value={s.model} onChange={(e) => set({ model: e.target.value as Settings['model'] })}>
+            <option value="auto">Choose for this computer{s.autoModel ? ` (using ${s.autoModel === 'apex' ? 'Apex' : 'Swift'})` : ''}</option>
             {models.map((m) => (
               <option key={m.id} value={m.id} disabled={!m.installed}>
                 {m.label}
-                {m.installed ? '' : ' — not installed'}
+                {m.installed ? '' : ' (not installed)'}
               </option>
             ))}
           </select>
-          <small>Apex is more accurate but needs a fast CPU or GPU; Swift runs in real time on most laptops.</small>
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={s.showPartials} onChange={(e) => set({ showPartials: e.target.checked })} />
-          <span>Show live preview while someone is still speaking</span>
-        </label>
-        <label className="field narrow">
-          <span>CPU threads</span>
-          <input type="number" min={1} max={32} value={s.threads} onChange={(e) => set({ threads: Math.max(1, Number(e.target.value) || 1) })} />
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={s.useGpu} onChange={(e) => set({ useGpu: e.target.checked })} />
-          <span>Use GPU (Vulkan) when available</span>
-        </label>
+          <p className="field-hint">Swift keeps up in real time on most laptops. Apex is more accurate and needs a fast processor.</p>
+        </div>
+        <Toggle checked={s.showPartials} onChange={(v) => set({ showPartials: v })} label="Show words while someone is still talking" hint="Turn off to save processor time on slower computers." />
+        <div className="field narrow">
+          <label htmlFor="threads">Processor threads</label>
+          <input id="threads" type="number" min={1} max={32} value={s.threads} onChange={(e) => set({ threads: Math.max(1, Number(e.target.value) || 1) })} />
+        </div>
+        <Toggle checked={s.useGpu} onChange={(v) => set({ useGpu: v })} label="Use the graphics card (Vulkan) when available" />
       </section>
 
       <section>
-        <h3>Audio</h3>
-        <label className="field">
-          <span>Microphone ("Me")</span>
-          <select value={s.micDeviceId ?? ''} onChange={(e) => set({ micDeviceId: e.target.value || null })}>
+        <h2>Audio</h2>
+        <div className="field">
+          <label htmlFor="mic">Your microphone</label>
+          <select id="mic" value={s.micDeviceId ?? ''} onChange={(e) => set({ micDeviceId: e.target.value || null })}>
             <option value="">System default</option>
             {mics.map((m) => (
               <option key={m.deviceId} value={m.deviceId}>
@@ -81,35 +86,25 @@ export function SettingsView() {
               </option>
             ))}
           </select>
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={s.captureSystemAudio} onChange={(e) => set({ captureSystemAudio: e.target.checked })} />
-          <span>Transcribe the other side of the call ("Them") — {systemLabel}</span>
-        </label>
-        <label className="check">
-          <input type="checkbox" checked={s.saveAudio} onChange={(e) => set({ saveAudio: e.target.checked })} />
-          <span>Save a compressed audio recording with each transcript</span>
-        </label>
+        </div>
+        <Toggle checked={s.captureSystemAudio} onChange={(v) => set({ captureSystemAudio: v })} label="Transcribe the other people on the call" hint={callAudio} />
+        <Toggle checked={s.saveAudio} onChange={(v) => set({ saveAudio: v })} label="Keep a recording with each transcript" hint="Compressed audio, about 11 MB per hour." />
       </section>
 
       <section>
-        <h3>Storage & startup</h3>
+        <h2>Files and startup</h2>
         <div className="field">
-          <span>Save transcripts in</span>
+          <label>Transcripts folder</label>
           <div className="path-row">
-            <code>{s.storageDir}</code>
+            <code title={s.storageDir}>{s.storageDir}</code>
             <button className="btn" onClick={() => api.settings.chooseStorageDir()}>
-              Change…
+              Change folder
             </button>
           </div>
         </div>
-        <label className="check">
-          <input type="checkbox" checked={s.launchAtLogin} onChange={(e) => set({ launchAtLogin: e.target.checked })} />
-          <span>Start Call Notes when I log in</span>
-        </label>
-        <p className="hint">
-          Shortcut: <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>N</kbd> starts/stops a transcript from anywhere. Changes apply to the next
-          recording.
+        <Toggle checked={s.launchAtLogin} onChange={(v) => set({ launchAtLogin: v })} label="Open Call Notes when I sign in" />
+        <p className="field-hint">
+          Start or stop from anywhere with <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>. Changes apply to the next recording.
         </p>
       </section>
     </div>

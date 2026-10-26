@@ -18,6 +18,7 @@ const api: CallNotesApi = {
     onSegment: (cb) => on('live:segment', cb),
     onSegmentRemoved: (cb) => on('live:segment-removed', cb),
     onPartial: (cb) => on('live:partial', cb),
+    onLevel: (cb) => on('live:level', cb),
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),

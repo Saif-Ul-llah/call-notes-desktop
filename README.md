@@ -18,6 +18,7 @@ Get the Windows installer from the [Releases page](https://github.com/Saif-Ul-ll
   - `transcript.md`
   - `transcript.json` (input for the planned LLM minutes-of-meeting feature)
   - Opus audio, about 11 MB/hour
+- **Linux Wayland:** the app relaunches itself through XWayland (`--ozone-platform=x11`), because Wayland doesn't let apps keep a window on top or move it. Set `CALLNOTES_WAYLAND=1` to opt out.
 - **Retry and restart:**
   - The speech engine runs in its own process with a watchdog, so a crash or hang restarts it and the queued audio is replayed.
   - A lost microphone or system-audio stream is re-acquired automatically.

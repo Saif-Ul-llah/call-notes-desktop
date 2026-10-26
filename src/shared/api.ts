@@ -36,6 +36,7 @@ export interface CallNotesApi {
     onSegment(cb: (s: Segment) => void): Unsubscribe
     onSegmentRemoved(cb: (e: { sessionId: string; id: string }) => void): Unsubscribe
     onPartial(cb: (p: PartialLine) => void): Unsubscribe
+    onLevel(cb: (l: { mic: number; system: number }) => void): Unsubscribe
   }
   settings: {
     get(): Promise<Settings>
