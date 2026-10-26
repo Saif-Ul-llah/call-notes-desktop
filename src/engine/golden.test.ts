@@ -110,7 +110,7 @@ describe.skipIf(!enabled)('golden clips', () => {
         const t = Date.now()
         const { promise } = ctx.transcribeData(audio, {
           language: MODELS[id].language.roman, temperature: 0, beamSize: beam, bestOf: beam, maxThreads: 4,
-          ...(useAudioCtx ? { audioCtx: audioCtxFor(pcm.length / 16) } : {}),
+          ...(useAudioCtx ? { audioCtx: audioCtxFor(audio.byteLength / 32 + Number(process.env.GOLDEN_CTX_EXTRA_MS ?? 0)) } : {}),
         } as Parameters<typeof ctx.transcribeData>[1])
         const raw = (await promise).result
         const ms = Date.now() - t
