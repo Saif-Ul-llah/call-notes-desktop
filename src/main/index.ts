@@ -34,7 +34,14 @@ if (
   // Electron itself sets ozone-platform=wayland, so look for our flag on the real argv
   !process.argv.includes('--ozone-platform=x11')
 ) {
-  app.relaunch({ args: [...process.argv.slice(1), '--ozone-platform=x11'] })
+  // an AppImage's files vanish when this process exits (unmount / temp extraction is
+  // removed), so relaunch the .AppImage file itself rather than the binary inside it
+  const appImage = process.env.APPIMAGE
+  app.relaunch(
+    appImage
+      ? { execPath: appImage, args: [...process.argv.slice(1), '--ozone-platform=x11'] }
+      : { args: [...process.argv.slice(1), '--ozone-platform=x11'] },
+  )
   app.exit(0)
 }
 
