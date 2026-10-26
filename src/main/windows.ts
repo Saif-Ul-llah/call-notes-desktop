@@ -245,7 +245,7 @@ export class WindowManager {
   }
 
   setOverlayOpacity(value: number): void {
-    const v = Math.min(1, Math.max(0.3, value))
+    const v = Math.min(1, Math.max(0.6, value))
     this.overlay?.setOpacity(v)
     this.settings.set({ overlayOpacity: v })
   }
@@ -268,6 +268,9 @@ export class WindowManager {
       title: 'Call Notes',
       backgroundColor: '#12151b',
       autoHideMenuBar: true,
+      // app-drawn navy title bar with the system's own window buttons on top of it
+      titleBarStyle: 'hidden',
+      titleBarOverlay: { color: '#0f1b2e', symbolColor: '#aab1be', height: 40 },
       webPreferences: { preload: preload() },
     })
     win.once('ready-to-show', () => win.show())

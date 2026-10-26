@@ -16,7 +16,7 @@ export function defaultSettings(): Settings {
     micDeviceId: null,
     saveAudio: true,
     storageDir: process.env.CALLNOTES_DATA_DIR ? join(process.env.CALLNOTES_DATA_DIR, 'CallNotes') : join(app.getPath('documents'), 'CallNotes'),
-    overlayOpacity: 0.95,
+    overlayOpacity: 1,
     overlayBounds: null,
     buttonPosition: null,
     launchAtLogin: false,
@@ -30,7 +30,7 @@ export function defaultSettings(): Settings {
   }
 }
 
-const SETTINGS_VERSION = 2
+const SETTINGS_VERSION = 3
 
 /** One-time fixes for settings saved by older versions. */
 function migrate(stored: Partial<Settings>, defaults: Settings): Partial<Settings> {
@@ -38,6 +38,10 @@ function migrate(stored: Partial<Settings>, defaults: Settings): Partial<Setting
   if ((stored.settingsVersion ?? 1) < 2) {
     // v0.1 defaulted to (cores - 2) threads, which oversubscribes laptops; adopt the new cap
     if ((stored.threads ?? 0) > defaults.threads) out.threads = defaults.threads
+  }
+  if ((stored.settingsVersion ?? 1) < 3) {
+    // the live window used to default to 95% opacity, which lets busy apps show through
+    if (stored.overlayOpacity === 0.95) out.overlayOpacity = 1
   }
   out.settingsVersion = SETTINGS_VERSION
   return out

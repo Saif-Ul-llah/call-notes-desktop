@@ -1,7 +1,32 @@
-.lib {
-  display: grid;
-  grid-template-columns: 300px 1fr;
+.app {
   height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* app-drawn title bar; the system window buttons are overlaid on the right */
+.titlebar {
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 40px;
+  padding: 0 16px;
+  padding-right: calc(100vw - env(titlebar-area-width, calc(100vw - 150px)) + 16px);
+  background: var(--navy);
+  border-bottom: 1px solid var(--navy-line);
+  font-size: var(--t-md);
+  font-weight: 700;
+  color: var(--text);
+  user-select: none;
+}
+
+.lib {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 290px 1fr;
 }
 
 /* ---------- sidebar */
@@ -9,28 +34,17 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 18px 14px 12px;
+  padding: 16px 14px 12px;
   background: var(--navy);
   border-right: 1px solid var(--navy-line);
   min-height: 0;
 }
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: var(--t-lg);
-  font-weight: 700;
-  color: var(--text);
-  padding: 0 4px 2px;
-}
-.record-card {
+.record {
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  padding: 12px;
-  border-radius: var(--r-m);
-  background: var(--navy-raised);
-  border: 1px solid var(--navy-line);
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--navy-line);
 }
 .record-btn {
   height: 40px;
@@ -43,6 +57,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  padding: 0 2px;
 }
 .link {
   background: none;

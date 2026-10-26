@@ -58,6 +58,7 @@ function Overlay() {
     })
     const offs = [
       api.session.onStatus((s) => {
+        if (s.status === 'idle') setPartials({})
         // a new session started: clear the previous transcript
         if (s.sessionId && s.sessionId !== sessionRef.current) {
           sessionRef.current = s.sessionId
@@ -149,7 +150,12 @@ function Overlay() {
               <span className={`who ${speakerClass(t.speaker)}`}>{t.speaker}</span>
               <span className="ts">{formatClock(t.startMs)}</span>
             </div>
-            <p className={`text ${t.speaker === 'Notice' ? 'notice' : ''}`}>{t.lines.map((l) => l.text).join(' ')}</p>
+            {/* one line per sentence: easier to follow live than a growing paragraph */}
+            {t.lines.map((l) => (
+              <p key={l.id} className={`text ${t.speaker === 'Notice' ? 'notice' : ''}`}>
+                {l.text}
+              </p>
+            ))}
           </section>
         ))}
         {previews.map((p) => (
@@ -189,7 +195,7 @@ function Overlay() {
           <span>Opacity</span>
           <input
             type="range"
-            min={0.35}
+            min={0.6}
             max={1}
             step={0.05}
             value={opacity}

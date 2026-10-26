@@ -51,15 +51,19 @@ function Library() {
   }, [live.sessionId, refresh])
 
   return (
+    <div className="app">
+      <header className="titlebar">
+        <Glyph size={18} />
+        <span>Call Notes</span>
+      </header>
     <div className="lib">
       <aside className="side">
-        <div className="brand">
-          <Glyph size={20} />
-          <span>Call Notes</span>
-        </div>
-
-        <div className="record-card">
-          <button className={`btn ${recording ? 'rec' : 'gold'} record-btn`} onClick={() => api.session.toggle()}>
+        <div className="record">
+          <button
+            className={`btn ${recording ? 'rec' : 'gold'} record-btn`}
+            onClick={() => api.session.toggle()}
+            title={recording ? 'Stop and save (Ctrl+Alt+N)' : 'Start transcribing (Ctrl+Alt+N)'}
+          >
             {recording ? <StopIcon size={12} /> : <MicIcon size={16} />}
             {recording ? `Stop  ${clock(elapsed)}` : 'Start transcript'}
           </button>
@@ -70,9 +74,7 @@ function Library() {
                 Show live window
               </button>
             ) : (
-              <span className="hint">
-                <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>N</kbd>
-              </span>
+              <span className="hint">Ctrl+Alt+N</span>
             )}
           </div>
         </div>
@@ -126,6 +128,7 @@ function Library() {
           </div>
         )}
       </main>
+    </div>
     </div>
   )
 }

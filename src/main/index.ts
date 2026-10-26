@@ -146,6 +146,8 @@ app.whenReady().then(() => {
     for (const w of [windows.button, windows.overlay]) if (w && !w.isDestroyed()) w.webContents.send('live:level', l)
   })
   mgr.on('saved', () => {
+    // a call that ended mid-sentence must not leave a "speaking" preview behind
+    for (const p of livePartials.values()) windows.broadcast('live:partial', { ...p, text: '' })
     livePartials.clear()
     windows.broadcast('library:changed')
   })

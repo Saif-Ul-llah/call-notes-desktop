@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { api, clock, speakerClass } from '../common'
-import { CopyIcon, DownloadIcon, FolderIcon, PauseIcon, PlayIcon, ResumeIcon, SparkIcon, TrashIcon } from '../icons'
+import { CopyIcon, DownloadIcon, FolderIcon, PauseIcon, PlayIcon, ResumeIcon, TrashIcon } from '../icons'
 import type { ExportFormat, SessionDetail } from '../../../shared/api'
 import { formatClock, toParagraphs } from '../../../shared/transcript-format'
 
@@ -208,10 +208,6 @@ export function SessionView({ id, liveSessionId, onDeleted }: { id: string; live
           <button className="btn" onClick={() => api.library.openFolder(id)}>
             <FolderIcon size={15} />
             Show files
-          </button>
-          <button className="btn" disabled title="Coming next: an on-device AI writes minutes of meeting from this transcript">
-            <SparkIcon size={15} />
-            Write minutes
           </button>
           <span className="spacer" />
           <button

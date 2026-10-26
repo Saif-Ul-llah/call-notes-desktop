@@ -3,8 +3,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-m);
+  border: 1px solid var(--navy-line);
   overflow: hidden;
   position: relative;
 }
@@ -79,7 +78,7 @@
   font-variant-numeric: tabular-nums;
 }
 .text {
-  margin: 0;
+  margin: 0 0 4px;
   font-family: var(--font-read);
   font-size: calc(var(--t-read) * var(--scale));
   line-height: 1.55;
