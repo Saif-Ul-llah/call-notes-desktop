@@ -1,0 +1,50 @@
+appId: com.callnotes.desktop
+productName: Call Notes
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+  - '!**/*.map'
+  # only the CPU and Vulkan whisper.cpp builds are used; skip CUDA (~200 MB), WASM and C++ sources
+  - '!node_modules/@fugood/node-whisper-*-cuda/**'
+  - '!node_modules/@fugood/node-whisper-wasm/**'
+  - '!node_modules/@fugood/whisper.node/{src,scripts,CMakeLists.txt}'
+  - '!node_modules/@fugood/whisper.node/src/**'
+asarUnpack:
+  # native whisper.cpp addons must live on the real filesystem
+  - node_modules/@fugood/**
+extraResources:
+  # bundled offline models (fetched by `npm run fetch-models` before packaging)
+  - from: resources/models
+    to: models
+    filter: ['*.bin']
+  - from: resources/icons
+    to: icons
+  # AVX2 whisper.cpp build (Linux; produced by `npm run build-native`)
+  - from: native
+    to: native
+    filter: ['*/index.node']
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icons/icon.png
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Office
+  icon: resources/icons/icon.png
+  maintainer: Call Notes
+deb:
+  # system-audio capture uses PipeWire (pw-record) or PulseAudio (parec)
+  recommends:
+    - pipewire-bin
+    - pulseaudio-utils
