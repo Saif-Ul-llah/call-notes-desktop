@@ -49,6 +49,18 @@ async function init(msg: Extract<HostToEngine, { type: 'init' }>) {
   }
 }
 
+/** Join merged slices with 250 ms of silence so words at the seams don't run together. */
+function joinPcm(parts: ArrayBuffer[]): ArrayBuffer {
+  const gap = 250 * 32
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.byteLength, 0) + gap * (parts.length - 1))
+  let at = 0
+  for (const p of parts) {
+    out.set(new Uint8Array(p), at)
+    at += p.byteLength + gap
+  }
+  return out.buffer
+}
+
 async function transcribe(msg: Extract<HostToEngine, { type: 'transcribe' }>) {
   if (!whisper) {
     send({ type: 'job-error', id: msg.id, kind: msg.kind, error: 'engine not initialised' })
@@ -56,7 +68,7 @@ async function transcribe(msg: Extract<HostToEngine, { type: 'transcribe' }>) {
   }
   const started = Date.now()
   try {
-    let pcm = msg.pcm ?? pcmFromWav(msg.wavPath!)
+    let pcm = msg.pcm ?? (msg.wavPaths ? joinPcm(msg.wavPaths.map(pcmFromWav)) : pcmFromWav(msg.wavPath!))
     const audioMs = Math.round(pcm.byteLength / 32) // 16 kHz * 2 bytes = 32 bytes/ms
 
     // Gate finals with Silero VAD and crop them to the detected speech: whisper
@@ -80,8 +92,8 @@ async function transcribe(msg: Extract<HostToEngine, { type: 'transcribe' }>) {
       maxThreads: threads,
       temperature: 0,
       temperatureInc: 0.2,
-      beamSize: final ? 5 : 1,
-      bestOf: final ? 5 : 1,
+      beamSize: final && !msg.fast ? 5 : 1,
+      bestOf: final && !msg.fast ? 5 : 1,
       prompt: msg.prompt,
       // finals: encoder window = cropped speech + 2 s (golden clips: CER 2.7% vs 4.4% for the
       // full 30 s window, ~4x faster); previews arrive with an even tighter window

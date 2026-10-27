@@ -19,6 +19,10 @@ export type HostToEngine =
       stream: StreamId
       /** finals are read from disk (crash-safe), partials are sent inline */
       wavPath?: string
+      /** several waiting finals transcribed as one chunk (joined with short silences) */
+      wavPaths?: string[]
+      /** far behind: greedy decoding instead of beam search */
+      fast?: boolean
       pcm?: ArrayBuffer
       language: string
       prompt?: string

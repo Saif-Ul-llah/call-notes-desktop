@@ -1,7 +1,7 @@
 {
   "name": "call-notes-desktop",
   "productName": "Call Notes",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Offline real-time call and meeting transcription (English + Roman Urdu/Hindi)",
   "main": "out/main/index.js",
   "author": "Call Notes",

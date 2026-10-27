@@ -154,7 +154,7 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
       }
       this.engine.enqueueFinal({
         id: job.id, stream: job.stream, wavPath: job.wavPath, language: job.language as LanguageMode,
-        durationMs: job.endMs - job.startMs, crashes: 0,
+        durationMs: job.endMs - job.startMs, crashes: 0, group: job.sessionId,
       })
     }
     for (const s of crashed) this.scheduleTranscriptWrite(s.id, 0)
@@ -377,7 +377,9 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
       startMs: st.offsetMs + startMs, endMs: st.offsetMs + endMs, language: cur.language,
     }
     this.store.addJob(job)
-    this.engine.enqueueFinal({ id, stream, wavPath, language: cur.language, prompt: this.promptFor(cur, st), durationMs: endMs - startMs, crashes: 0 })
+    this.engine.enqueueFinal({
+      id, stream, wavPath, language: cur.language, prompt: this.promptFor(cur, st), durationMs: endMs - startMs, crashes: 0, group: cur.info.id,
+    })
     this.emitStatus()
   }
 
@@ -485,15 +487,18 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
 
   // ------------------------------------------------------------------ engine results
 
-  private onFinal(r: { id: string; stream: StreamId; text: string; noSpeech: boolean; processMs: number; audioMs: number }): void {
-    const job = this.store.getJob(r.id)
+  private onFinal(r: { id: string; ids: string[]; stream: StreamId; text: string; noSpeech: boolean; processMs: number; audioMs: number }): void {
+    // several waiting lines may have been transcribed together: one segment spans them all
+    const jobs = r.ids.map((id) => this.store.getJob(id)).filter((j) => !!j)
+    const job = jobs[0]
     if (!job) return
-    this.log('debug', `final ${job.stream} ${job.startMs}-${job.endMs}ms: ${r.processMs} ms for ${r.audioMs} ms audio${r.noSpeech ? ' (no speech)' : ''}`)
+    const endMs = Math.max(...jobs.map((j) => j.endMs))
+    this.log('debug', `final ${job.stream} ${job.startMs}-${endMs}ms${jobs.length > 1 ? ` (${jobs.length} lines)` : ''}: ${r.processMs} ms for ${r.audioMs} ms audio${r.noSpeech ? ' (no speech)' : ''}`)
     const text = r.noSpeech ? '' : cleanTranscript(r.text)
     if (text) {
       const seg: Segment = {
         id: job.id, sessionId: job.sessionId, stream: job.stream, speaker: SPEAKER[job.stream],
-        startMs: job.startMs, endMs: job.endMs, text, rawText: r.text,
+        startMs: job.startMs, endMs, text, rawText: r.text,
       }
       if (!this.dropIfEcho(seg)) {
         this.store.addSegment(seg)
@@ -502,14 +507,16 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
       const st = this.cur?.info.id === job.sessionId ? this.cur.streams.get(job.stream) : undefined
       if (st) st.context = text.slice(-200)
     }
-    this.store.completeJob(job.id)
-    try {
-      unlinkSync(job.wavPath)
-    } catch {
-      /* already gone */
+    for (const j of jobs) {
+      this.store.completeJob(j.id)
+      try {
+        unlinkSync(j.wavPath)
+      } catch {
+        /* already gone */
+      }
     }
     if (this.cur?.info.id === job.sessionId) {
-      this.emit('partial', { sessionId: job.sessionId, stream: job.stream, speaker: SPEAKER[job.stream], startMs: job.endMs, text: '' })
+      this.emit('partial', { sessionId: job.sessionId, stream: job.stream, speaker: SPEAKER[job.stream], startMs: endMs, text: '' })
     }
     this.scheduleTranscriptWrite(job.sessionId)
     this.emitStatus()
@@ -545,7 +552,7 @@ export class SessionManager extends EventEmitter<SessionManagerEvents> {
       setTimeout(() => {
         this.engine.enqueueFinal({
           id: job.id, stream: job.stream, wavPath: job.wavPath, language: job.language as LanguageMode,
-          durationMs: job.endMs - job.startMs, crashes: 0,
+          durationMs: job.endMs - job.startMs, crashes: 0, group: job.sessionId,
         })
       }, backoffDelay(attempts))
     }

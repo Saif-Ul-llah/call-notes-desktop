@@ -1,6 +1,11 @@
 // Owns the whisper utility process: starts it, feeds it one job at a time, and restarts
 // it with exponential backoff when it crashes, hangs or fails to load. Final jobs are
 // persisted by the caller (DB + WAV on disk), so after a restart they are simply resent.
+//
+// Keeping up on a slow CPU: when lines are waiting, several of one stream are sent as
+// one chunk (one encoder pass and more context; on a real 16-min lecture ~15 s chunks
+// were ~1.7x cheaper and more accurate than single lines), and far behind, beam search
+// is dropped.
 
 import { EventEmitter } from 'node:events'
 import { utilityProcess, type UtilityProcess } from 'electron'
@@ -8,6 +13,7 @@ import { join } from 'node:path'
 import { backoffDelay } from '../shared/session-state'
 import type { EngineToHost, HostToEngine } from '../shared/engine-protocol'
 import { MODELS, audioCtxFor } from '../shared/models'
+import { takeFinals } from './pipeline/merge'
 import type { EngineStatus, LanguageMode, ModelId, StreamId } from '../shared/types'
 
 export interface FinalJob {
@@ -20,6 +26,8 @@ export interface FinalJob {
   durationMs: number
   /** times this job was in flight when the engine died */
   crashes: number
+  /** jobs are only merged within one group (the session) */
+  group?: string
 }
 
 interface PartialJob {
@@ -48,11 +56,15 @@ export interface EngineHostOptions {
 
 export interface EngineHostEvents {
   status: [EngineStatus, string | null]
-  final: [{ id: string; stream: StreamId; text: string; noSpeech: boolean; processMs: number; audioMs: number }]
+  /** `ids`: every job the text covers (several when waiting lines were merged), in time order */
+  final: [{ id: string; ids: string[]; stream: StreamId; text: string; noSpeech: boolean; processMs: number; audioMs: number }]
   partial: [{ stream: StreamId; text: string }]
   'job-failed': [{ id: string; error: string }]
   'model-failed': [{ model: ModelId; error: string }]
 }
+
+/** With more lines than this still waiting, decode greedily. */
+const FAR_BEHIND = 3
 
 const PING_EVERY_MS = 2000
 const PONG_TIMEOUT_MS = 20000
@@ -65,7 +77,7 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
   private model: EngineModel | null = null
   private finals: FinalJob[] = []
   private partials = new Map<StreamId, PartialJob>()
-  private inflight: { kind: 'final'; job: FinalJob } | { kind: 'partial'; job: PartialJob } | null = null
+  private inflight: { kind: 'final'; job: FinalJob; parts: FinalJob[] } | { kind: 'partial'; job: PartialJob } | null = null
   private inflightTimer: NodeJS.Timeout | null = null
   private pingTimer: NodeJS.Timeout | null = null
   private restartTimer: NodeJS.Timeout | null = null
@@ -90,7 +102,7 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
   }
 
   get pendingCount(): number {
-    return this.finals.length + (this.inflight?.kind === 'final' ? 1 : 0)
+    return this.finals.length + (this.inflight?.kind === 'final' ? this.inflight.parts.length : 0)
   }
 
   start(): void {
@@ -122,7 +134,7 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
   }
 
   enqueueFinal(job: FinalJob): void {
-    if (this.finals.some((j) => j.id === job.id) || (this.inflight?.kind === 'final' && this.inflight.job.id === job.id)) return
+    if (this.finals.some((j) => j.id === job.id) || (this.inflight?.kind === 'final' && this.inflight.parts.some((j) => j.id === job.id))) return
     this.finals.push(job)
     // a final supersedes the partial preview of the same stream
     this.partials.delete(job.stream)
@@ -212,23 +224,28 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
         break
       case 'bench':
         break
-      case 'result':
+      case 'result': {
+        const parts = this.inflight?.kind === 'final' && this.inflight.job.id === msg.id ? this.inflight.parts : null
         this.finishInflight(msg.id)
         if (msg.kind === 'final' && msg.audioMs > 0 && !msg.noSpeech) {
           this.finalSpeed = this.finalSpeed * 0.6 + (msg.processMs / msg.audioMs) * 0.4
         }
         if (msg.kind === 'final') {
-          this.emit('final', { id: msg.id, stream: msg.stream, text: msg.text, noSpeech: msg.noSpeech, processMs: msg.processMs, audioMs: msg.audioMs })
+          const ids = parts?.map((j) => j.id) ?? [msg.id]
+          this.emit('final', { id: msg.id, ids, stream: msg.stream, text: msg.text, noSpeech: msg.noSpeech, processMs: msg.processMs, audioMs: msg.audioMs })
         } else {
           this.emit('partial', { stream: msg.stream, text: msg.text })
         }
         this.pump()
         break
-      case 'job-error':
+      }
+      case 'job-error': {
+        const parts = this.inflight?.kind === 'final' && this.inflight.job.id === msg.id ? this.inflight.parts : null
         this.finishInflight(msg.id)
-        if (msg.kind === 'final') this.emit('job-failed', { id: msg.id, error: msg.error })
+        if (msg.kind === 'final') for (const id of parts?.map((j) => j.id) ?? [msg.id]) this.emit('job-failed', { id, error: msg.error })
         this.pump()
         break
+      }
     }
   }
 
@@ -259,13 +276,14 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
     if (this.inflightTimer) clearTimeout(this.inflightTimer)
     this.inflightTimer = null
     if (!cur || cur.kind !== 'final') return
-    if (countCrash) cur.job.crashes++
-    if (cur.job.crashes >= MAX_JOB_CRASHES) {
+    const back: FinalJob[] = []
+    for (const job of cur.parts) {
+      if (countCrash) job.crashes++
       // poison job: it keeps killing the engine; give up on it (audio is still archived)
-      this.emit('job-failed', { id: cur.job.id, error: 'engine crashed repeatedly on this audio slice' })
-      return
+      if (job.crashes >= MAX_JOB_CRASHES) this.emit('job-failed', { id: job.id, error: 'engine crashed repeatedly on this audio slice' })
+      else back.push(job)
     }
-    this.finals.unshift(cur.job)
+    this.finals.unshift(...back)
   }
 
   private finishInflight(id: string): void {
@@ -284,12 +302,18 @@ export class EngineHost extends EventEmitter<EngineHostEvents> {
 
   private pump(): void {
     if (!this.proc || !this.model || this.inflight || (this.status !== 'ready' && this.status !== 'busy')) return
-    const final = this.finals.shift()
-    if (final) {
-      this.inflight = { kind: 'final', job: final }
-      this.send({ type: 'transcribe', id: final.id, kind: 'final', stream: final.stream, wavPath: final.wavPath, ...this.decodeOptions(final.language, final.prompt) })
+    const parts = takeFinals(this.finals)
+    if (parts.length > 0) {
+      const final = parts[0]
+      this.inflight = { kind: 'final', job: final, parts }
+      if (parts.length > 1) this.opts.log('debug', `merging ${parts.length} waiting lines into one chunk`)
+      this.send({
+        type: 'transcribe', id: final.id, kind: 'final', stream: final.stream, wavPath: final.wavPath,
+        wavPaths: parts.length > 1 ? parts.map((j) => j.wavPath) : undefined, fast: this.finals.length > FAR_BEHIND,
+        ...this.decodeOptions(final.language, final.prompt),
+      })
       // a hung native call is detected here (pings still answer while native code runs)
-      this.armTimeout(Math.max(30000, final.durationMs * 10))
+      this.armTimeout(Math.max(30000, parts.reduce((n, j) => n + j.durationMs, 0) * 10))
     } else {
       const [stream, partial] = this.partials.entries().next().value ?? []
       if (!stream || !partial) return
